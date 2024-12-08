@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'common_widgets.dart';
+import 'package:hedieaty/models/event.dart' as app_event;
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:hedieaty/services/auth.dart';
+import 'package:hedieaty/models/enums.dart';
 
 class CreateEventPage extends StatefulWidget {
   @override
@@ -11,13 +15,61 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
   TextEditingController _eventNameController = TextEditingController();
   TextEditingController _eventDescriptionController = TextEditingController();
+  TextEditingController _eventLocationController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
-  String _category = 'Birthday';
-  String _status = 'Upcoming';
+  String _category = 'personal';
+  String _status = 'upcoming';
 
-  List<String> _categories = ['Birthday', 'Wedding', 'Graduation', 'Holiday'];
-  List<String> _statuses = ['Upcoming', 'Current', 'Past'];
+  List<String> _categories = ['personal', 'birthday', 'wedding', 'graduation', 'other'];
+  List<String> _statuses = ['upcoming', 'current', 'past'];
+
+  void _saveEvent() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    firebase_auth.User? user = Auth().currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: No user logged in.')),
+      );
+      return;
+    }
+
+    final newEvent = app_event.Event(
+      name: _eventNameController.text,
+      date: _selectedDate,
+      location: _eventLocationController.text,
+      description: _eventDescriptionController.text,
+      status: EventStatus.values.firstWhere((e) => e.name == _status),
+      category: EventCategory.values.firstWhere((e) => e.name == _category),
+    );
+
+    try {
+      await app_event.Event.publishToFirebase(newEvent, user.uid);
+
+      await app_event.Event.saveDraft(newEvent);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Event saved: ${newEvent.name}')),
+      );
+      _resetForm();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving event: $e')),
+      );
+    }
+  }
+
+  void _resetForm() {
+    _eventNameController.clear();
+    _eventDescriptionController.clear();
+    _eventLocationController.clear();
+    setState(() {
+      _category = 'personal';
+      _status = 'upcoming';
+      _selectedDate = DateTime.now();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +105,15 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   ),
                   cursorColor: appColors['buttonText'],
                   decoration: TextFieldDecoration.searchInputDecoration('Event Description'),
+                  maxLines: 3,
+                ),
+                TextFormField(
+                  controller: _eventLocationController,
+                  style: TextStyle(
+                      color: appColors['buttonText']
+                  ),
+                  cursorColor: appColors['buttonText'],
+                  decoration: TextFieldDecoration.searchInputDecoration('Event Location'),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -168,21 +229,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
         _selectedDate = picked;
       });
     }
-  }
-
-  void _saveEvent() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Event saved: ${_eventNameController.text}'),
-      ),
-    );
-    _eventNameController.clear();
-    _eventDescriptionController.clear();
-    setState(() {
-      _category = 'Birthday';
-      _status = 'Upcoming';
-      _selectedDate = DateTime.now();
-    });
   }
 
   @override
