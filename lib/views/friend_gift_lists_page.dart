@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hedieaty/common_widgets.dart';
+import 'package:hedieaty/views/common_widgets.dart';
 
 class FriendsGiftListPage extends StatefulWidget {
   @override

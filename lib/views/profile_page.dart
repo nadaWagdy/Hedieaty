@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hedieaty/common_widgets.dart';
+import 'package:hedieaty/views/common_widgets.dart';
 import 'my_pledged_gifts_page.dart';
 import 'my_event_gift_lists_page.dart';
 import 'my_events_page.dart';

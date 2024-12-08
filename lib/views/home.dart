@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hedieaty/login_page.dart';
+import 'package:hedieaty/views/widget_tree.dart';
 import 'friend_events_page.dart';
 import 'create_event_page.dart';
 import 'create_gift_list_page.dart';
 import 'common_widgets.dart';
 import 'my_events_page.dart';
 import 'profile_page.dart';
+import 'package:hedieaty/services/auth.dart';
 
 class HedieatyApp extends StatelessWidget{
 
@@ -15,7 +16,7 @@ class HedieatyApp extends StatelessWidget{
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hedieaty',
-      home: LoginPage(),
+      home: WidgetTree(),
       theme: ThemeData(
           scaffoldBackgroundColor: appColors['background']
       ),
@@ -34,6 +35,10 @@ class HedieatyApp extends StatelessWidget{
 
 class AppLayout extends StatelessWidget {
   const AppLayout({super.key});
+
+  Future<void> signOut() async {
+    await Auth().signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +59,15 @@ class AppLayout extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.pushNamed(context, '/profile');
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.logout,
+                size: 50,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                signOut();
               },
             ),
           ],
