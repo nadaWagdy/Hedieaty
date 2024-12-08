@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hedieaty/signup_page.dart';
-import 'package:hedieaty/home.dart';
-import 'package:hedieaty/common_widgets.dart';
+import 'signup_page.dart';
+import 'common_widgets.dart';
+import 'package:hedieaty/services/auth.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,6 +14,27 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true;
+
+
+  Future<void> signInWithEmailAndPassword() async {
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      await Auth().signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "An error occurred")),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,13 +138,13 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // the logic to login is to be implemented
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AppLayout(),
-                          ),
-                        );
+                        signInWithEmailAndPassword();
+                        // Navigator.pushReplacement(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => const AppLayout(),
+                        //   ),
+                        // );
                       }
                     },
                     child: Text(
