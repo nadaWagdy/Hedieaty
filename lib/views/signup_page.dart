@@ -1,5 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hedieaty/common_widgets.dart';
+import 'common_widgets.dart';
+import 'package:hedieaty/services/auth.dart';
+import 'package:hedieaty/models/user.dart' as app_user;
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -12,6 +16,42 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+
+  Future<void> createUserWithEmailAndPassword() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      await Auth().createUserWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      firebase_auth.User? firebaseUser = Auth().currentUser;
+
+      if (firebaseUser != null) {
+        app_user.User newUser = app_user.User(
+          id: firebaseUser.uid,
+          name: _nameController.text,
+          email: _emailController.text,
+          notificationPreferences: false,
+          profilePicture: 'assets/images/default.png',
+          events: [],
+          friends: [],
+          pledgedGifts: [],
+        );
+
+        await app_user.User.publishToFirebase(newUser);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "An error occurred")),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +195,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-
+                        createUserWithEmailAndPassword();
                       }
                     },
                     child: Text(
