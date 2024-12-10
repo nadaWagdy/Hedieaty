@@ -91,7 +91,7 @@ class Gift {
   static Future<void> publishToFirebase(Gift gift, String eventID, String userId) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventID/gifts').push();
     gift.id = ref.key ?? '';
-    await ref.set(gift.toMap());
+    await ref.set(gift.toFirebaseMap());
   }
 
   static Future<List<Gift>> fetchFromFirebase(String eventID, String userId) async {
@@ -99,7 +99,7 @@ class Gift {
     final snapshot = await ref.get();
     if (snapshot.exists) {
       final gifts = (snapshot.value as Map<String, dynamic>).values;
-      return gifts.map((g) => Gift.fromMap(g as Map<String, dynamic>)).toList();
+      return gifts.map((g) => Gift.fromFirebaseMap(g as Map<String, dynamic>)).toList();
     }
     return [];
   }
