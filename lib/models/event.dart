@@ -6,9 +6,9 @@ import 'enums.dart';
 
 class Event {
   String id;
-  final String name;
+  String name;
   final DateTime date;
-  final String location;
+  String location;
   final String description;
   final EventStatus status;
   final EventCategory category;
@@ -96,10 +96,23 @@ class Event {
   static Future<List<Event>> fetchFromFirebase(String userId) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events');
     final snapshot = await ref.get();
-    if (snapshot.exists) {
-      final events = (snapshot.value as Map<String, dynamic>).values;
-      return events.map((e) => Event.fromMap(e as Map<String, dynamic>)).toList();
+
+    if (snapshot.exists && snapshot.value is Map) {
+      final eventsMap = snapshot.value as Map<dynamic, dynamic>;
+      return eventsMap.values
+          .map((e) => Event.fromFirebaseMap(Map<String, dynamic>.from(e)))
+          .toList();
     }
     return [];
+  }
+
+  static Future<void> deleteFromFirebase(String userId, String eventId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId');
+    await ref.remove();
+  }
+
+  Future<void> updateInFirebase(String userId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$id');
+    await ref.update(toFirebaseMap());
   }
 }
