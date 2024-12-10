@@ -1,5 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'common_widgets.dart';
+import 'package:hedieaty/models/event.dart' as event_model;
+
+import 'create_event_page.dart';
 
 class MyEventsPage extends StatefulWidget {
   @override
@@ -10,55 +14,198 @@ class _MyEventsPageState extends State<MyEventsPage> {
   String selectedSortOption = 'Name';
   List<String> sortOptions = ['Name', 'Category', 'Status'];
 
-  List<Map<String, String>> events = [
-    {
-      'name': 'Birthday Party',
-      'category': 'Social',
-      'status': 'Upcoming',
-      'date': '2024-11-05',
-      'location': 'New York'
-    },
-    {
-      'name': 'Conference',
-      'category': 'Work',
-      'status': 'Current',
-      'date': '2024-10-30',
-      'location': 'San Francisco'
-    },
-    {
-      'name': 'Wedding',
-      'category': 'Family',
-      'status': 'Past',
-      'date': '2023-12-25',
-      'location': 'Los Angeles'
-    },
-    {
-      'name': 'Birthday Party',
-      'category': 'Social',
-      'status': 'Upcoming',
-      'date': '2024-11-05',
-      'location': 'New York'
-    },
-    {
-      'name': 'Conference',
-      'category': 'Work',
-      'status': 'Current',
-      'date': '2024-10-30',
-      'location': 'San Francisco'
-    },
-    {
-      'name': 'Wedding',
-      'category': 'Family',
-      'status': 'Past',
-      'date': '2023-12-25',
-      'location': 'Los Angeles'
-    },
-  ];
+  List<event_model.Event> events = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchEvents();
+  }
+
+  Future<void> fetchEvents() async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      final fetchedEvents = await event_model.Event.fetchFromFirebase(userId!);
+      setState(() {
+        events = fetchedEvents;
+        isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error fetching events: $error',
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> editEvent(event_model.Event event) async {
+    final TextEditingController nameController =
+    TextEditingController(text: event.name);
+    final TextEditingController locationController =
+    TextEditingController(text: event.location);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, fontFamily: 'lxgw', color: appColors['primary'])),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: textFieldsDecoration('Event Name'),
+              style: TextStyle(color: Colors.black),
+              cursorColor: appColors['primary'],
+            ),
+            SizedBox(height: 20,),
+            TextField(
+              controller: locationController,
+              decoration: textFieldsDecoration('Location'),
+              style: TextStyle(color: Colors.black),
+              cursorColor: appColors['primary'],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: appColors['primary']),),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              event.name = nameController.text;
+              event.location = locationController.text;
+
+              final userId = FirebaseAuth.instance.currentUser?.uid;
+
+              await event.updateInFirebase(userId!);
+
+              setState(() {
+                int index = events.indexWhere((e) => e.id == event.id);
+                if (index != -1) {
+                  events[index] = event;
+                }
+              });
+
+              Navigator.of(context).pop();
+            },
+            child: Text('Save'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: appColors['primary'],
+              foregroundColor: appColors['buttonText'],
+              shadowColor: Colors.blueGrey,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              textStyle: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration textFieldsDecoration(String text) {
+    return InputDecoration(
+      labelText: '$text',
+      labelStyle: TextStyle(
+        color: appColors['primary'],
+        fontWeight: FontWeight.bold,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.0),
+        borderSide: BorderSide(
+          color: Colors.black,
+          width: 1.5,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(
+          color: Color(0xFFF41F4E),
+          width: 2.0,
+        ),
+      ),
+    );
+  }
+
+  Future<void> deleteEvent(event_model.Event event) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, fontFamily: 'lxgw', color: appColors['primary']),),
+        content: Text('Are you sure you want to delete this event?',
+          style: TextStyle(fontSize: 18, fontFamily: 'lxgw'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel', style: TextStyle(color: appColors['primary']),),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Delete'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: appColors['primary'],
+              foregroundColor: appColors['buttonText'],
+              shadowColor: Colors.blueGrey,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              padding:
+              EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              textStyle: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmation == true) {
+      await event_model.Event.deleteFromFirebase(userId!, event.id);
+
+      setState(() {
+        events.removeWhere((e) => e.id == event.id);
+      });
+    }
+  }
 
   void sortEvents(String criterion) {
     setState(() {
       selectedSortOption = criterion;
-      events.sort((a, b) => a[criterion.toLowerCase()]!.compareTo(b[criterion.toLowerCase()]!));
+      events.sort((a, b) {
+        switch (criterion) {
+          case 'Name':
+            return a.name.compareTo(b.name);
+          case 'Category':
+            return a.category.index.compareTo(b.category.index);
+          case 'Status':
+            return a.status.index.compareTo(b.status.index);
+          default:
+            return 0;
+        }
+      });
     });
   }
 
@@ -68,7 +215,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
       appBar: createSubPageAppBar('My Events'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButton<String>(
@@ -93,7 +242,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Text('Sort by $option'),
-                  )
+                  ),
                 );
               }).toList(),
               icon: Icon(
@@ -115,56 +264,52 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
-                      title: Text(event['name'] ?? 'Unnamed Event',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: appColors['primary']
-                      ),
+                      title: Text(
+                        event.name,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: appColors['primary'],
+                        ),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Category: ${event['category']}',
-                          style: TextStyle(
-                            fontSize: 18
+                          Text(
+                            'Category: ${event.category.name}',
+                            style: TextStyle(fontSize: 18),
                           ),
+                          Text(
+                            'Status: ${event.status.name}',
+                            style: TextStyle(fontSize: 18),
                           ),
-                          Text('Status: ${event['status']}',
-                            style: TextStyle(
-                                fontSize: 18
-                            ),
+                          Text(
+                            'Date: ${event.date.toLocal().toString().split(' ')[0]}',
+                            style: TextStyle(fontSize: 18),
                           ),
-                          Text('Date: ${event['date']}',
-                            style: TextStyle(
-                                fontSize: 18
-                            ),
-                          ),
-                          Text('Location: ${event['location']}',
-                            style: TextStyle(
-                                fontSize: 18
-                            ),
+                          Text(
+                            'Location: ${event.location}',
+                            style: TextStyle(fontSize: 18),
                           ),
                         ],
                       ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (String result) {
                           if (result == 'Edit') {
-
+                            editEvent(event);
                           } else if (result == 'Delete') {
-                            setState(() {
-                              events.removeAt(index);
-                            });
+                            deleteEvent(event);
                           }
                         },
-                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
                           PopupMenuItem<String>(
                             value: 'Edit',
-                            child: Text('Edit'),
+                            child: Text('Edit', style: TextStyle(fontFamily: 'lxgw', fontWeight: FontWeight.bold, color: appColors['primary'], fontSize: 20),),
                           ),
                           PopupMenuItem<String>(
                             value: 'Delete',
-                            child: Text('Delete'),
+                            child: Text('Delete', style: TextStyle(fontFamily: 'lxgw', fontWeight: FontWeight.bold, color: appColors['primary'], fontSize: 20),),
                           ),
                         ],
                       ),
@@ -179,13 +324,17 @@ class _MyEventsPageState extends State<MyEventsPage> {
             SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateEventPage(),
+                  ),
+                );
               },
               icon: Icon(Icons.add),
-              label: Text('Add New Event',
-                style: TextStyle(
-                  fontSize: 18
-                ),
+              label: Text(
+                'Create New Event',
+                style: TextStyle(fontSize: 18),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: appColors['primary'],
