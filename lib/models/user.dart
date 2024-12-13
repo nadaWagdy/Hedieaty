@@ -6,10 +6,10 @@ import 'gift.dart';
 
 class User {
   final String id;
-  final String name;
+  String name;
   final String email;
-  final bool notificationPreferences;
-  final String profilePicture;
+  bool notificationPreferences;
+  String profilePicture;
   final List<Event> events;
   final List<User> friends;
   final List<Gift> pledgedGifts;
@@ -65,17 +65,62 @@ class User {
       email: map['email'],
       notificationPreferences: map['notificationPreferences'],
       profilePicture: map['profilePicture'] ?? '',
-      events: (map['events'] as List<dynamic>)
-          .map((e) => Event.fromFirebaseMap(e as Map<String, dynamic>))
-          .toList(),
-      pledgedGifts: (map['pledgedGifts'] as List<dynamic>)
-          .map((g) => Gift.fromFirebaseMap(g as Map<String, dynamic>))
-          .toList(),
-      friends: (map['friends'] as List<dynamic>)
-          .map((f) => User.fromFirebaseMap(f as Map<String, dynamic>))
-          .toList(),
+      events: _parseEvents(map['events']),
+      pledgedGifts: _parseGifts(map['pledgedGifts']),
+      friends: _parseFriends(map['friends']),
     );
   }
+
+  static List<Event> _parseEvents(dynamic data) {
+    if (data is Map) {
+      return data.entries.map((entry) {
+        return Event.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
+      }).toList();
+    }
+    return [];
+  }
+
+  static List<Gift> _parseGifts(dynamic data) {
+    if (data is Map) {
+      return data.entries.map((entry) {
+        return Gift.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
+      }).toList();
+    }
+    return [];
+  }
+
+  static List<User> _parseFriends(dynamic data) {
+    if (data is Map) {
+      return data.entries.map((entry) {
+        return User.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
+      }).toList();
+    }
+    return [];
+  }
+
+
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? profilePicture,
+    bool? notificationPreferences,
+    List<Event>? events,
+    List<User>? friends,
+    List<Gift>? pledgedGifts,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      profilePicture: profilePicture ?? this.profilePicture,
+      notificationPreferences: notificationPreferences ?? this.notificationPreferences,
+      events: events ?? this.events,
+      friends: friends ?? this.friends,
+      pledgedGifts: pledgedGifts ?? this.pledgedGifts,
+    );
+  }
+
 
   //SQLite
   static Future<void> saveDraft(User user) async {
@@ -99,9 +144,32 @@ class User {
   static Future<User?> fetchFromFirebase(String userId) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId');
     final snapshot = await ref.get();
-    if (snapshot.exists) {
-      return User.fromMap(snapshot.value as Map<String, dynamic>);
+
+    if (snapshot.exists && snapshot.value is Map) {
+      return User.fromFirebaseMap(Map<String, dynamic>.from(snapshot.value as Map));
     }
     return null;
   }
+
+  static Future<void> updateNotificationPreferences(String userId, bool newPreference) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId');
+    await ref.update({
+      'notificationPreferences': newPreference,
+    });
+  }
+
+  static Future<void> updateUserName(String userId, String newName) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId');
+    await ref.update({
+      'name': newName,
+    });
+  }
+
+  static Future<void> updateProfilePicture(String userId, String newPath) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId');
+    await ref.update({
+      'profilePicture': newPath,
+    });
+  }
+
 }
