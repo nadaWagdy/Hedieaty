@@ -62,17 +62,29 @@ class Gift {
 
   static Gift fromFirebaseMap(Map<String, dynamic> map) {
     return Gift(
-      id: map['id'],
-      name: map['name'],
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
       description: map['description'],
       category: map['category'] != null
-          ? GiftCategory.values.firstWhere((e) => e.name == map['category'])
+          ? GiftCategory.values.firstWhere(
+              (e) => e.name == map['category'], orElse: () => GiftCategory.other)
           : null,
-      price: map['price'],
-      status: GiftStatus.values.firstWhere((e) => e.name == map['status']),
-      eventID: map['event_id'],
+      price: map['price'] != null ? double.tryParse(map['price'].toString()) : null,
+      status: GiftStatus.values.firstWhere(
+              (e) => e.name == map['status'], orElse: () => GiftStatus.available),
+      eventID: map['event_id'] ?? '',
     );
   }
+
+  static List<Gift> _parseGifts(dynamic data) {
+    if (data is Map) {
+      return data.entries.map((entry) {
+        return Gift.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
+      }).toList();
+    }
+    return [];
+  }
+
 
   //SQLite
   static Future<void> saveDraft(Gift gift) async {
@@ -97,10 +109,12 @@ class Gift {
   static Future<List<Gift>> fetchFromFirebase(String eventID, String userId) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventID/gifts');
     final snapshot = await ref.get();
+
     if (snapshot.exists) {
-      final gifts = (snapshot.value as Map<String, dynamic>).values;
-      return gifts.map((g) => Gift.fromFirebaseMap(g as Map<String, dynamic>)).toList();
+      final Map<String, dynamic> giftsMap = Map<String, dynamic>.from(snapshot.value as Map<Object?, Object?>);
+      return _parseGifts(giftsMap);
     }
     return [];
   }
+
 }
