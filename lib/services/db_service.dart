@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/user.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -66,5 +67,15 @@ class DatabaseService {
         PRIMARY KEY (user_id, friend_id)
       )
     ''');
+  }
+
+  Future<void> updateUser(User user) async {
+    final db = await openDatabase('drafts.db');
+    await db.update(
+      'DraftUsers',
+      user.toMap(),
+      where: 'id = ?',
+      whereArgs: [user.id],
+    );
   }
 }
