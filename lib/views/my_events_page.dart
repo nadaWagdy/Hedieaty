@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hedieaty/views/my_event_gift_lists_page.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
 
@@ -264,6 +265,14 @@ class _MyEventsPageState extends State<MyEventsPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyEventGiftsListPage(eventId: events[index].id),
+                          ),
+                        );
+                      },
                       title: Text(
                         event.name,
                         style: TextStyle(
