@@ -9,7 +9,7 @@ class Gift {
   final String? description;
   final GiftCategory? category;
   final double? price;
-  final GiftStatus status;
+  GiftStatus status;
   final String eventID;
 
   Gift({
@@ -115,6 +115,13 @@ class Gift {
       return _parseGifts(giftsMap);
     }
     return [];
+  }
+
+  static Future<void> updateStatus(String userId, String eventId, String giftId, GiftStatus newStatus) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$giftId');
+    await ref.update({
+      'status': newStatus.name,
+    });
   }
 
 }
