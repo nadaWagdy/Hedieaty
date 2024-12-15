@@ -1,48 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/views/common_widgets.dart';
+import 'package:hedieaty/models/gift.dart';
 
 class FriendsGiftListPage extends StatefulWidget {
+  final String friendName;
+  final String eventName;
+  final String eventId;
+  final String friendId;
+
+  const FriendsGiftListPage({Key? key, required this.friendName, required this.eventName, required this.eventId, required this.friendId}) : super(key: key);
+
   @override
   _FriendsGiftListPageState createState() => _FriendsGiftListPageState();
 }
 
 class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
-  final String friendName = "Kiara";
-  final String eventName = "Birthday Party";
+  late List<Gift> gifts;
+  bool isLoading = true;
 
-  List<Map<String, dynamic>> gifts = [
-    {
-      "name": "Smartwatch",
-      "description": "A stylish smartwatch to keep track of your health.",
-      "isPledged": false,
-    },
-    {
-      "name": "Wireless Headphones",
-      "description": "Noise-cancelling wireless headphones for the music lover.",
-      "isPledged": false,
-    },
-    {
-      "name": "Gift Card",
-      "description": "A gift card for your favorite store.",
-      "isPledged": false,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadGifts();
+  }
 
   void pledgeGift(int index) {
     setState(() {
-      gifts[index]["isPledged"] = true;
+      if (gifts[index].status != GiftStatus.pledged) {
+        gifts[index].status = GiftStatus.pledged;
+        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${gifts[index].name} pledged!')),
+        );
+      } else {
+        gifts[index].status = GiftStatus.available;
+        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.available);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${gifts[index].name} unpledged!')),
+        );
+      }
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${gifts[index]["name"]} pledged!')),
-    );
+  }
+
+  Future<void> _loadGifts() async {
+    try {
+      gifts = await Gift.fetchFromFirebase(widget.eventId, widget.friendId);
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching gifts: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: createSubPageAppBar('$friendName\'s $eventName Gifts'),
-      body: Column(
+      appBar: createSubPageAppBar('${widget.friendName}\'s ${widget.eventName} Gifts'),
+      body: isLoading ?
+      CircularProgressIndicator()
+      : Column(
         children: [
+          SizedBox(height: 20,),
           Expanded(
             child: ListView.builder(
               itemCount: gifts.length,
@@ -58,27 +78,54 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                     ),
                     child: ListTile(
                       title: Text(
-                        gift["name"]!,
+                        gift.name,
                         style: TextStyle(
                           color: appColors['primary'],
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
                         ),
                       ),
-                      subtitle: Text(
-                        gift["description"]!,
-                        style: TextStyle(fontSize: 16),
+                      subtitle:Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            gifts[index].description ?? 'No description available',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontFamily: 'lxgw',
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Category: ${gifts[index].category?.name ?? "Unknown"}',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                color: appColors['secondary'],
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          Text(
+                            'Status: ${gifts[index].status.name}',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                color: appColors['secondary'],
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
                       ),
                       trailing: IconButton(
                         icon: Icon(
-                          gift["isPledged"] ? Icons.check_box : Icons.add_box_rounded,
+                          gift.status == GiftStatus.pledged ? Icons.check_box : Icons.add_box_rounded,
                           color: appColors['primary'],
                         ),
-                        onPressed: gift["isPledged"]
+                        onPressed: gift.status == GiftStatus.purchased
                             ? null
                             : () => pledgeGift(index),
                       ),
-                      tileColor: gift["isPledged"] ? appColors['pledged'] : null,
+                      tileColor: gift.status == GiftStatus.pledged ? appColors['pledged'] : null,
                       onTap: () {
 
                       },
