@@ -11,7 +11,7 @@ class User {
   bool notificationPreferences;
   String profilePicture;
   final List<Event> events;
-  final List<User> friends;
+  final List<String> friends;
   final List<Gift> pledgedGifts;
 
   User({
@@ -54,7 +54,7 @@ class User {
       'profilePicture': profilePicture,
       'events': events.map((e) => e.toFirebaseMap()).toList(),
       'pledgedGifts': pledgedGifts.map((g) => g.toFirebaseMap()).toList(),
-      'friends': friends.map((f) => f.toFirebaseMap()).toList(),
+      'friends': {for (var friendId in friends) friendId: true},
     };
   }
 
@@ -65,13 +65,13 @@ class User {
       email: map['email'],
       notificationPreferences: map['notificationPreferences'],
       profilePicture: map['profilePicture'] ?? '',
-      events: _parseEvents(map['events']),
-      pledgedGifts: _parseGifts(map['pledgedGifts']),
-      friends: _parseFriends(map['friends']),
+      events: parseEvents(map['events']),
+      pledgedGifts: parseGifts(map['pledgedGifts']),
+      friends: parseFriendIds(map['friends']),
     );
   }
 
-  static List<Event> _parseEvents(dynamic data) {
+  static List<Event> parseEvents(dynamic data) {
     if (data is Map) {
       return data.entries.map((entry) {
         return Event.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
@@ -80,7 +80,7 @@ class User {
     return [];
   }
 
-  static List<Gift> _parseGifts(dynamic data) {
+  static List<Gift> parseGifts(dynamic data) {
     if (data is Map) {
       return data.entries.map((entry) {
         return Gift.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
@@ -89,15 +89,12 @@ class User {
     return [];
   }
 
-  static List<User> _parseFriends(dynamic data) {
+  static List<String> parseFriendIds(dynamic data) {
     if (data is Map) {
-      return data.entries.map((entry) {
-        return User.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
-      }).toList();
+      return data.keys.map((key) => key.toString()).toList();
     }
     return [];
   }
-
 
   User copyWith({
     String? id,
@@ -106,7 +103,7 @@ class User {
     String? profilePicture,
     bool? notificationPreferences,
     List<Event>? events,
-    List<User>? friends,
+    List<String>? friends,
     List<Gift>? pledgedGifts,
   }) {
     return User(
