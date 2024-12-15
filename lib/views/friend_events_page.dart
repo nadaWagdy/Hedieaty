@@ -2,83 +2,210 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'common_widgets.dart';
 import 'friend_gift_lists_page.dart';
+import 'package:hedieaty/models/event.dart' as event_model;
+import 'package:hedieaty/models/user.dart';
 
 class EventListPage extends StatefulWidget {
-  final Friend friend;
+  final String friendId;
 
-  const EventListPage({Key? key, required this.friend}) : super(key: key);
+  const EventListPage({Key? key, required this.friendId}) : super(key: key);
 
   @override
   _EventListPageState createState() => _EventListPageState();
 }
 
 class _EventListPageState extends State<EventListPage> {
-  late List<Event> friendEvents;
+  List<event_model.Event> friendEvents = [];
+  bool isLoading = true;
+  late User _friend;
 
   static const IconData giftIcon = IconData(0xf689, fontFamily: 'lxgw', );
 
   @override
   void initState() {
     super.initState();
-    friendEvents = widget.friend.events;
+    fetchEvents(widget.friendId);
+    _fetchFriendData(widget.friendId);
+  }
+
+  Future<void> fetchEvents(String id) async {
+    try {
+      final fetchedEvents = await event_model.Event.fetchFromFirebase(id);
+      setState(() {
+        friendEvents = fetchedEvents;
+        isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error fetching events: $error',
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _fetchFriendData(String id) async {
+
+    try {
+      User? user = await User.fetchFromFirebase(id);
+
+      if (user != null) {
+        setState(() {
+          _friend = user;
+        });
+      }
+    } catch (error) {
+      print("Error fetching friend data: $error");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: createSubPageAppBar('${widget.friend.name}\'s Events'),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: friendEvents.length,
-              itemBuilder: (context, index) {
-                final event = friendEvents[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Card(
-                    color: appColors['listCard'],
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ListTile(
-                      title: Text(event.name,
+      appBar: isLoading ? createSubPageAppBar(''): createSubPageAppBar('${_friend.name}\'s Events'),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            isLoading ? SizedBox(height: 20,) : Row(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: AssetImage(_friend.profilePicture),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _friend.name,
                         style: TextStyle(
-                          color: appColors['primary'],
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          fontSize: 20
+                          color: appColors['buttonText'],
                         ),
                       ),
-                      subtitle: Text(event.status,
+                      Text(
+                        _friend.email,
                         style: TextStyle(
-                          fontSize: 16
+                          fontSize: 16,
+                          color: appColors['buttonText'],
                         ),
                       ),
-                      trailing: IconButton(
-                        icon: Icon(CupertinoIcons.gift_fill,
-                          color: appColors['primary'],
-                          size: 40,
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20,),
+            Expanded(
+              child: ListView.builder(
+                itemCount: friendEvents.length,
+                itemBuilder: (context, index) {
+                  final event = friendEvents[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: isLoading ?
+                    Center(child: CircularProgressIndicator())
+                        : Card(
+                      color: appColors['listCard'],
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ListTile(
+                        title: Text(event.name,
+                          style: TextStyle(
+                              color: appColors['primary'],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                          ),
                         ),
-                        onPressed: () {
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                  text: 'Category: ',
+                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: '${event.category.name}',
+                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
+                                    )
+                                  ]
+                              ),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                  text: 'Status: ',
+                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: '${event.status.name}',
+                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
+                                    )
+                                  ]
+                              ),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                  text: 'Date: ',
+                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: '${event.date.toLocal().toString().split(' ')[0]}',
+                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
+                                    )
+                                  ]
+                              ),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                  text: 'Location: ',
+                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: '${event.location}',
+                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
+                                    )
+                                  ]
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(CupertinoIcons.gift_fill,
+                            color: appColors['primary'],
+                            size: 40,
+                          ),
+                          onPressed: () {
 
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FriendsGiftListPage(friendId: _friend.id, eventId: event.id, friendName: _friend.name, eventName: event.name,),
+                            ),
+                          );
                         },
                       ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FriendsGiftListPage(),
-                          ),
-                        );
-                      },
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
