@@ -1,5 +1,7 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/widget_tree.dart';
+import '../models/user.dart';
 import 'friend_events_page.dart';
 import 'create_event_page.dart';
 import 'create_gift_list_page.dart';
@@ -40,6 +42,101 @@ class AppLayout extends StatelessWidget {
     await Auth().signOut();
   }
 
+  void _showAddFriendDialog(BuildContext build_context) async {
+    final currentUser = Auth().currentUser?.uid;
+    List<User> allUsers = await _fetchAllUsers();
+    List<User> filteredUsers = allUsers.where((user) => user.id != currentUser).toList();
+
+    showDialog(
+      context: build_context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add Friend'),
+          content: filteredUsers.isEmpty
+              ? Text('No other users found.')
+              : SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: filteredUsers.length,
+              itemBuilder: (context, index) {
+                final user = filteredUsers[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: AssetImage(user.profilePicture),
+                  ),
+                  title: Text(user.name),
+                  subtitle: Text(user.email),
+                  trailing: IconButton(
+                    icon: Icon(Icons.person_add),
+                    onPressed: () {
+                      _addFriend(user, build_context);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<List<User>> _fetchAllUsers() async {
+    DatabaseReference usersRef = FirebaseDatabase.instance.ref('users');
+    final snapshot = await usersRef.get();
+
+    if (snapshot.exists) {
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      return data.entries.map((entry) {
+        final userId = entry.key;
+        final userData = entry.value;
+        return User(
+          id: userId,
+          name: userData['name'] ?? 'No Name',
+          email: userData['email'] ?? '',
+          profilePicture: userData['profilePicture'] ?? '',
+          notificationPreferences: userData['notificationPreferences'] ?? true,
+          events: User.parseEvents(userData['events']),
+          friends: User.parseFriendIds(userData['friends']),
+          pledgedGifts: User.parseGifts(userData['pledgedGifts']),
+        );
+      }).toList();
+    } else {
+      return [];
+    }
+  }
+
+
+  void _addFriend(User friend, BuildContext context) async {
+    final currentUser = Auth().currentUser?.uid;
+    if (currentUser == null) return;
+
+    DatabaseReference userFriendsRef = FirebaseDatabase.instance.ref('users/$currentUser/friends');
+    await userFriendsRef.update({
+      friend.id: true,
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${friend.name} added as a friend!'),
+      ),
+    );
+    print('${friend.name} added as a friend!');
+
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,9 +175,7 @@ class AppLayout extends StatelessWidget {
         body: HomePage(),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            // functionality to add friends
-            // might be a dialog
-            // to be implemented
+            _showAddFriendDialog(context);
           },
           child: Icon(Icons.person_add,
             color: appColors['buttonText'],
@@ -102,54 +197,66 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  // dummy data to be displayed for now
-  List<Friend> friendsList = [
-    Friend(name: 'Bob', profilePic: 'assets/images/profile1.jpg', upcomingEvents: 1, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-    ]),
-    Friend(name: 'Alice', profilePic: 'assets/images/profile2.jpg', upcomingEvents: 0, events: []),
-    Friend(name: 'Kiara', profilePic: 'assets/images/profile3.jpg', upcomingEvents: 3, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Graduation', status: 'Upcoming', category: 'Personal'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ]),
-    Friend(name: 'Marc', profilePic: 'assets/images/profile4.jpg', upcomingEvents: 2, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ],),
-    Friend(name: 'Bob', profilePic: 'assets/images/profile1.jpg', upcomingEvents: 1, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-    ]),
-    Friend(name: 'Alice', profilePic: 'assets/images/profile2.jpg', upcomingEvents: 0, events: []),
-    Friend(name: 'Kiara', profilePic: 'assets/images/profile3.jpg', upcomingEvents: 3, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Graduation', status: 'Upcoming', category: 'Personal'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ]),
-    Friend(name: 'Marc', profilePic: 'assets/images/profile4.jpg', upcomingEvents: 2, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ],),
-    Friend(name: 'Bob', profilePic: 'assets/images/profile1.jpg', upcomingEvents: 1, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-    ]),
-    Friend(name: 'Alice', profilePic: 'assets/images/profile2.jpg', upcomingEvents: 0, events: []),
-    Friend(name: 'Kiara', profilePic: 'assets/images/profile3.jpg', upcomingEvents: 3, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Graduation', status: 'Upcoming', category: 'Personal'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ]),
-    Friend(name: 'Marc', profilePic: 'assets/images/profile4.jpg', upcomingEvents: 2, events: [
-      Event(name: 'Birthday Party', status: 'Upcoming', category: 'Birthday'),
-      Event(name: 'Wedding', status: 'Upcoming', category: 'Wedding'),
-    ],),
-  ];
-
-
+  List<User> friendsList = [];
   String searchQuery = '';
+  bool isLoading = true;
 
-  List<Friend> get filteredFriendsList {
+  @override
+  void initState() {
+    super.initState();
+    _fetchFriends();
+  }
+
+  Future<void> _fetchFriends() async {
+    final currentUser = Auth().currentUser?.uid;
+    if (currentUser == null) return;
+
+    try {
+      DatabaseReference userFriendsRef = FirebaseDatabase.instance.ref('users/$currentUser/friends');
+      final friendsSnapshot = await userFriendsRef.get();
+
+      if (friendsSnapshot.exists) {
+        final friendsIds = (friendsSnapshot.value as Map<dynamic, dynamic>).keys;
+
+        DatabaseReference usersRef = FirebaseDatabase.instance.ref('users');
+        List<User> loadedFriends = [];
+        for (var friendId in friendsIds) {
+          final friendSnapshot = await usersRef.child(friendId).get();
+          if (friendSnapshot.exists) {
+            final friendData = friendSnapshot.value as Map<dynamic, dynamic>;
+            loadedFriends.add(User(
+              id: friendId,
+              name: friendData['name'] ?? 'No Name',
+              email: friendData['email'] ?? '',
+              profilePicture: friendData['profilePicture'] ?? '',
+              notificationPreferences: friendData['notificationPreferences'] ?? true,
+              events: User.parseEvents(friendData['events']),
+              friends: User.parseFriendIds(friendData['friends']),
+              pledgedGifts: User.parseGifts(friendData['pledgedGifts']),
+            ));
+          }
+        }
+
+        setState(() {
+          friendsList = loadedFriends;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          friendsList = [];
+          isLoading = false;
+        });
+      }
+    } catch (error) {
+      print('Error fetching friends: $error');
+      setState(() {
+        friendsList = [];
+        isLoading = false;
+      });
+    }
+  }
+
+  List<User> get filteredFriendsList {
     if (searchQuery.isEmpty) {
       return friendsList;
     } else {
@@ -224,10 +331,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return isLoading
+        ? Center(child: CircularProgressIndicator())
+        : Column(
       children: [
         SizedBox(
           height: 35,
@@ -271,7 +379,14 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
+          child: filteredFriendsList.isEmpty
+              ? Center(
+            child: Text(
+              'No friends found.',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          )
+              : ListView.builder(
             itemCount: filteredFriendsList.length,
             itemBuilder: (context, index) {
               final friend = filteredFriendsList[index];
@@ -285,33 +400,28 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage(friend.profilePic),
+                      backgroundImage: friend.profilePicture.isNotEmpty
+                          ? AssetImage(friend.profilePicture)
+                          : AssetImage('assets/images/default_profile.png')
+                      as ImageProvider,
                     ),
-                    title: Text(
-                      friend.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 19,
-                        color: appColors['background'],
-                      ),
-                    ),
-                    subtitle: Text(
-                      friend.upcomingEvents > 0
-                          ? 'Upcoming Events: ${friend.upcomingEvents}'
-                          : 'No Upcoming Events',
-                      style: TextStyle(
-                          color: friend.upcomingEvents > 0
-                              ? appColors['primary']
-                              : appColors['unselected'],
-                          fontSize: 16
-                      ),
+                    title: Text(friend.name),
+                    subtitle: Text(friend.email),
+                    trailing: friend.events.isNotEmpty
+                        ? Text(
+                      "Upcoming Events: ${friend.events.length}",
+                      style: TextStyle(color: Colors.green, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
+                    )
+                        : Text(
+                      "No Upcoming Events",
+                      style: TextStyle(color: Colors.red, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
                     ),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => EventListPage(friend: friend),
+                          builder: (context) =>
+                              EventListPage(friendId: friend.id,),
                         ),
                       );
                     },
