@@ -115,4 +115,22 @@ class Event {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events/$id');
     await ref.update(toFirebaseMap());
   }
+
+  static Future<DateTime?> getEventDateById(String userId, String eventId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId');
+      final snapshot = await ref.get();
+
+      if (snapshot.exists && snapshot.value is Map) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        if (data['date'] != null) {
+          return DateTime.parse(data['date']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching event date: $e");
+      return null;
+    }
+  }
 }
