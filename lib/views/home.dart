@@ -108,7 +108,7 @@ class AppLayout extends StatelessWidget {
           notificationPreferences: userData['notificationPreferences'] ?? true,
           events: User.parseEvents(userData['events']),
           friends: User.parseFriendIds(userData['friends']),
-          pledgedGifts: User.parseGifts(userData['pledgedGifts']),
+          pledgedGifts: User.parsePledgedGifts(userData['pledgedGifts']),
         );
       }).toList();
     } else {
@@ -232,7 +232,7 @@ class _HomePageState extends State<HomePage> {
               notificationPreferences: friendData['notificationPreferences'] ?? true,
               events: User.parseEvents(friendData['events']),
               friends: User.parseFriendIds(friendData['friends']),
-              pledgedGifts: User.parseGifts(friendData['pledgedGifts']),
+              pledgedGifts: User.parsePledgedGifts(friendData['pledgedGifts']),
             ));
           }
         }
