@@ -11,6 +11,7 @@ class Gift {
   final double? price;
   GiftStatus status;
   final String eventID;
+  String? pledgedBy;
 
   Gift({
     this.id = '',
@@ -20,6 +21,7 @@ class Gift {
     this.price,
     required this.status,
     required this.eventID,
+    this.pledgedBy
   });
 
   Map<String, dynamic> toMap() {
@@ -57,6 +59,7 @@ class Gift {
       'price': price,
       'status': status.name,
       'event_id': eventID,
+      'pledged_by': pledgedBy
     };
   }
 
@@ -73,10 +76,11 @@ class Gift {
       status: GiftStatus.values.firstWhere(
               (e) => e.name == map['status'], orElse: () => GiftStatus.available),
       eventID: map['event_id'] ?? '',
+      pledgedBy: map['pledged_by']
     );
   }
 
-  static List<Gift> _parseGifts(dynamic data) {
+  static List<Gift> parseGifts(dynamic data) {
     if (data is Map) {
       return data.entries.map((entry) {
         return Gift.fromFirebaseMap(Map<String, dynamic>.from(entry.value));
@@ -112,15 +116,28 @@ class Gift {
 
     if (snapshot.exists) {
       final Map<String, dynamic> giftsMap = Map<String, dynamic>.from(snapshot.value as Map<Object?, Object?>);
-      return _parseGifts(giftsMap);
+      return parseGifts(giftsMap);
     }
     return [];
   }
+
+  static Future<Gift?> getGiftById(String userId, String eventId, String giftId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$giftId');
+    final snapshot = await ref.get();
+
+    if (snapshot.exists) {
+      final Map<String, dynamic> giftMap = Map<String, dynamic>.from(snapshot.value as Map<Object?, Object?>);
+      return Gift.fromFirebaseMap(giftMap);
+    }
+    return null;
+  }
+
 
   static Future<void> updateStatus(String userId, String eventId, String giftId, GiftStatus newStatus) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$giftId');
     await ref.update({
       'status': newStatus.name,
+      'pledged_by' : userId
     });
   }
 
