@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 import 'package:hedieaty/models/gift.dart';
+import 'package:hedieaty/models/user.dart' as user_model;
+import '../services/auth.dart';
 
 class FriendsGiftListPage extends StatefulWidget {
   final String friendName;
@@ -23,21 +27,18 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
   void initState() {
     super.initState();
     _loadGifts();
+    _addGiftsListener();
   }
 
   void pledgeGift(int index) {
+    final userId = Auth().currentUser?.uid;
     setState(() {
       if (gifts[index].status != GiftStatus.pledged) {
         gifts[index].status = GiftStatus.pledged;
         Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged);
+        user_model.User.addPledgedGift(userId!, widget.friendId, widget.eventId, gifts[index].id);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${gifts[index].name} pledged!')),
-        );
-      } else {
-        gifts[index].status = GiftStatus.available;
-        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.available);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${gifts[index].name} unpledged!')),
         );
       }
     });
@@ -52,6 +53,20 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
     } catch (e) {
       print('Error fetching gifts: $e');
     }
+  }
+
+  StreamSubscription<DatabaseEvent>? giftsStream;
+
+  void _addGiftsListener() {
+    final ref = FirebaseDatabase.instance.ref('users/${widget.friendId}/events/${widget.eventId}/gifts');
+    giftsStream = ref.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final Map<String, dynamic> giftsMap = Map<String, dynamic>.from(event.snapshot.value as Map<Object?, Object?>);
+        setState(() {
+          gifts = Gift.parseGifts(giftsMap);
+        });
+      }
+    });
   }
 
   @override
@@ -118,14 +133,14 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                       ),
                       trailing: IconButton(
                         icon: Icon(
-                          gift.status == GiftStatus.pledged ? Icons.check_box : Icons.add_box_rounded,
+                          gift.status != GiftStatus.available ? Icons.check_box : Icons.add_box_rounded,
                           color: appColors['primary'],
                         ),
-                        onPressed: gift.status == GiftStatus.purchased
-                            ? null
-                            : () => pledgeGift(index),
+                        onPressed: gift.status == GiftStatus.available
+                            ? () => pledgeGift(index)
+                            : null,
                       ),
-                      tileColor: gift.status == GiftStatus.pledged ? appColors['pledged'] : null,
+                      tileColor: getGiftStatusColor(gift.status),
                       onTap: () {
 
                       },
@@ -139,4 +154,11 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    giftsStream?.cancel();
+    super.dispose();
+  }
+
 }
