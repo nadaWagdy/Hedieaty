@@ -12,7 +12,7 @@ class User {
   String profilePicture;
   final List<Event> events;
   final List<String> friends;
-  final List<Gift> pledgedGifts;
+  final List<Map<String, String>> pledgedGifts;
 
   User({
     required this.id,
@@ -53,7 +53,11 @@ class User {
       'notificationPreferences': notificationPreferences,
       'profilePicture': profilePicture,
       'events': events.map((e) => e.toFirebaseMap()).toList(),
-      'pledgedGifts': pledgedGifts.map((g) => g.toFirebaseMap()).toList(),
+      'pledgedGifts': pledgedGifts.map((pg) => {
+        'friendId': pg['friendId'],
+        'eventId': pg['eventId'],
+        'giftId': pg['giftId'],
+      }).toList(),
       'friends': {for (var friendId in friends) friendId: true},
     };
   }
@@ -66,7 +70,7 @@ class User {
       notificationPreferences: map['notificationPreferences'],
       profilePicture: map['profilePicture'] ?? '',
       events: parseEvents(map['events']),
-      pledgedGifts: parseGifts(map['pledgedGifts']),
+      pledgedGifts: parsePledgedGifts(map['pledgedGifts']),
       friends: parseFriendIds(map['friends']),
     );
   }
@@ -96,26 +100,13 @@ class User {
     return [];
   }
 
-  User copyWith({
-    String? id,
-    String? name,
-    String? email,
-    String? profilePicture,
-    bool? notificationPreferences,
-    List<Event>? events,
-    List<String>? friends,
-    List<Gift>? pledgedGifts,
-  }) {
-    return User(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      profilePicture: profilePicture ?? this.profilePicture,
-      notificationPreferences: notificationPreferences ?? this.notificationPreferences,
-      events: events ?? this.events,
-      friends: friends ?? this.friends,
-      pledgedGifts: pledgedGifts ?? this.pledgedGifts,
-    );
+  static List<Map<String, String>> parsePledgedGifts(dynamic data) {
+    if (data is List) {
+      return data
+          .map((item) => Map<String, String>.from(item as Map<dynamic, dynamic>))
+          .toList();
+    }
+    return [];
   }
 
 
@@ -168,5 +159,69 @@ class User {
       'profilePicture': newPath,
     });
   }
+
+  static Future<void> addPledgedGift(String userId, String friendId, String eventId, String giftId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/pledgedGifts').push();
+    await ref.set(
+      {
+        'friendId' : friendId,
+        'eventId' : eventId,
+        'giftId' : giftId
+      }
+    );
+  }
+
+  static Future<List<Map<String, String>>> getAllPledgedGifts(String userId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/pledgedGifts');
+    final snapshot = await ref.get();
+
+    if (snapshot.exists && snapshot.value is List) {
+      return parsePledgedGifts(snapshot.value);
+    } else if (snapshot.exists && snapshot.value is Map) {
+      final data = (snapshot.value as Map<dynamic, dynamic>).values.toList();
+      return parsePledgedGifts(data);
+    }
+    return [];
+  }
+
+  static Future<String?> getUserNameById(String userId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users/$userId');
+
+      final snapshot = await ref.get();
+
+      if (snapshot.exists && snapshot.value is Map) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
+        return data['name'] as String?;
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching user name: $e");
+      return null;
+    }
+  }
+
+  static Future<void> removePledgedGift(String userId, String giftId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users/$userId/pledgedGifts');
+      final snapshot = await ref.get();
+
+      if (snapshot.exists && snapshot.value is List) {
+        List<dynamic> pledgedGifts = snapshot.value as List;
+        pledgedGifts.removeWhere((gift) => gift['giftId'] == giftId);
+        await ref.set(pledgedGifts);
+      } else if (snapshot.exists && snapshot.value is Map) {
+        Map<dynamic, dynamic> pledgedGifts = snapshot.value as Map;
+        pledgedGifts.removeWhere((key, value) => value['giftId'] == giftId);
+        await ref.set(pledgedGifts);
+      } else {
+        print("No pledged gifts found.");
+      }
+    } catch (e) {
+      print("Error removing pledged gift: $e");
+    }
+  }
+
+
 
 }
