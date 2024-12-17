@@ -35,8 +35,8 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
     setState(() {
       if (gifts[index].status != GiftStatus.pledged) {
         gifts[index].status = GiftStatus.pledged;
-        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged);
-        user_model.User.addPledgedGift(userId!, widget.friendId, widget.eventId, gifts[index].id);
+        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged, userId!);
+        user_model.User.addPledgedGift(userId, widget.friendId, widget.eventId, gifts[index].id);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${gifts[index].name} pledged!')),
         );
