@@ -54,7 +54,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     final userId = Auth().currentUser?.uid;
     print(myPledgedGifts[index].name);
     myPledgedGifts[index].status = GiftStatus.available;
-    Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available);
+    Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available, '');
     User.removePledgedGift(userId!, myPledgedGifts[index].id);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
@@ -65,10 +65,10 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
   }
 
   void purchaseGift(int index) {
-    // final userId = Auth().currentUser?.uid;
+    final userId = Auth().currentUser?.uid;
     setState(() {
       myPledgedGifts[index].status = GiftStatus.purchased;
-      Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased);
+      Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased, userId!);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
       );
