@@ -17,7 +17,7 @@ class EventListPage extends StatefulWidget {
 class _EventListPageState extends State<EventListPage> {
   List<event_model.Event> friendEvents = [];
   bool isLoading = true;
-  late User _friend;
+  User? _friend;
 
   static const IconData giftIcon = IconData(0xf689, fontFamily: 'lxgw', );
 
@@ -68,7 +68,7 @@ class _EventListPageState extends State<EventListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: isLoading ? createSubPageAppBar(''): createSubPageAppBar('${_friend.name}\'s Events'),
+      appBar: isLoading ? createSubPageAppBar(''): createSubPageAppBar('${_friend!.name}\'s Events'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -77,7 +77,7 @@ class _EventListPageState extends State<EventListPage> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage(_friend.profilePicture),
+                  backgroundImage: AssetImage(_friend!.profilePicture),
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -85,7 +85,7 @@ class _EventListPageState extends State<EventListPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _friend.name,
+                        _friend!.name,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -93,7 +93,7 @@ class _EventListPageState extends State<EventListPage> {
                         ),
                       ),
                       Text(
-                        _friend.email,
+                        _friend!.email,
                         style: TextStyle(
                           fontSize: 16,
                           color: appColors['buttonText'],
@@ -194,7 +194,7 @@ class _EventListPageState extends State<EventListPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => FriendsGiftListPage(friendId: _friend.id, eventId: event.id, friendName: _friend.name, eventName: event.name,),
+                              builder: (context) => FriendsGiftListPage(friendId: _friend!.id, eventId: event.id, friendName: _friend!.name, eventName: event.name,),
                             ),
                           );
                         },
