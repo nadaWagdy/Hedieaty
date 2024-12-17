@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
 import 'package:hedieaty/models/gift.dart';
+import 'package:hedieaty/models/user.dart' as user_model;
 import 'common_widgets.dart';
 
 class MyEventGiftsListPage extends StatefulWidget {
@@ -19,12 +22,14 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
   event_model.Event? event;
   late List<Gift> gifts = [];
   bool isLoading = true;
+  final List<String> _pledgedby = [];
 
   @override
   void initState() {
     super.initState();
     _loadEventDetails();
     _loadGifts();
+    _addGiftsListener();
   }
 
   Future<void> _loadEventDetails() async {
@@ -53,12 +58,36 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       gifts = await Gift.fetchFromFirebase(widget.eventId, userId!);
+      for (Gift gift in gifts) {
+        if (gift.status != GiftStatus.available) {
+          final Gift? pledged_gift = await Gift.getGiftById(userId, widget.eventId, gift.id);
+          String? name = await user_model.User.getUserNameById(pledged_gift!.pledgedBy!);
+          _pledgedby.add(name!);
+        } else {
+          _pledgedby.add('');
+        }
+      }
         setState(() {
           isLoading = false;
         });
     } catch (e) {
       print('Error fetching gifts: $e');
     }
+  }
+
+  StreamSubscription<DatabaseEvent>? giftsStream;
+
+  void _addGiftsListener() {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/${widget.eventId}/gifts');
+    giftsStream = ref.onValue.listen((event) {
+      if (event.snapshot.exists) {
+        final Map<String, dynamic> giftsMap = Map<String, dynamic>.from(event.snapshot.value as Map<Object?, Object?>);
+        setState(() {
+          gifts = Gift.parseGifts(giftsMap);
+        });
+      }
+    });
   }
 
   @override
@@ -130,7 +159,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                 itemCount: gifts.length,
                 itemBuilder: (context, index) {
                   return Card(
-                    color: appColors['listCard'],
+                    color: getGiftStatusColor(gifts[index].status),
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -174,6 +203,16 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                               fontWeight: FontWeight.bold
                             ),
                           ),
+                          gifts[index].status != GiftStatus.available ?
+                          Text(
+                            'Pledged By: ${_pledgedby[index]}',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                color: appColors['secondary'],
+                                fontWeight: FontWeight.bold
+                            ),
+                          ) : SizedBox(height: 0,)
                         ],
                       ),
                       trailing: Text(
@@ -193,5 +232,11 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    giftsStream?.cancel();
+    super.dispose();
   }
 }
