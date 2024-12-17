@@ -133,11 +133,11 @@ class Gift {
   }
 
 
-  static Future<void> updateStatus(String userId, String eventId, String giftId, GiftStatus newStatus) async {
+  static Future<void> updateStatus(String userId, String eventId, String giftId, GiftStatus newStatus, String pledgedBy) async {
     final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$giftId');
     await ref.update({
       'status': newStatus.name,
-      'pledged_by' : userId
+      'pledged_by' : pledgedBy
     });
   }
 
