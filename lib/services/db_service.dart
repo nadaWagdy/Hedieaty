@@ -58,6 +58,7 @@ class DatabaseService {
       price REAL,
       status INTEGER,
       event_id TEXT
+      imagePath TEXT
     )
     ''');
     await db.execute('''
