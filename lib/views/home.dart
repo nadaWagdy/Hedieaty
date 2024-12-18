@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/widget_tree.dart';
@@ -34,9 +36,17 @@ class HedieatyApp extends StatelessWidget{
 
 }
 
+class AppLayout extends StatefulWidget {
 
-class AppLayout extends StatelessWidget {
   const AppLayout({super.key});
+
+  @override
+  _AppLayoutState createState() => _AppLayoutState();
+}
+
+
+class _AppLayoutState extends State<AppLayout> {
+  // const AppLayout({super.key});
 
   Future<void> signOut() async {
     await Auth().signOut();
@@ -200,6 +210,7 @@ class _HomePageState extends State<HomePage> {
   List<User> friendsList = [];
   String searchQuery = '';
   bool isLoading = true;
+  String _defaultProfileImagePath = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -400,9 +411,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: friend.profilePicture.isNotEmpty
-                          ? AssetImage(friend.profilePicture)
-                          : AssetImage('assets/images/default_profile.png')
+                      backgroundImage: friend.profilePicture != _defaultProfileImagePath
+                          ? FileImage(File(friend.profilePicture))
+                          : AssetImage(friend.profilePicture)
                       as ImageProvider,
                     ),
                     title: Text(friend.name),
