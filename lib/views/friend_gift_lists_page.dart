@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/enums.dart';
+import 'package:hedieaty/services/notification_service.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/models/user.dart' as user_model;
@@ -22,6 +24,7 @@ class FriendsGiftListPage extends StatefulWidget {
 class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
   late List<Gift> gifts;
   bool isLoading = true;
+  String _defaultGiftImage = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -83,6 +86,9 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
               itemCount: gifts.length,
               itemBuilder: (context, index) {
                 final gift = gifts[index];
+                print('testtttt');
+                print(gift.imagePath != 'assets/images/default_profile.png');
+                print(gift.imagePath);
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                   child: Card(
@@ -92,6 +98,12 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: gift.imagePath != _defaultGiftImage
+                            ? FileImage(File(gift.imagePath!))
+                            : AssetImage(gift.imagePath!)
+                        as ImageProvider,
+                      ),
                       title: Text(
                         gift.name,
                         style: TextStyle(
