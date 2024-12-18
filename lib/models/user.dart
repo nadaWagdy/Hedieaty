@@ -229,4 +229,18 @@ class User {
     });
   }
 
+  static Future<String?> getNotificationToken(String userId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users/$userId/NotificationToken');
+      final snapshot = await ref.get();
+      if (snapshot.exists) {
+        return snapshot.value as String?;
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching notification token: $e");
+      return null;
+    }
+  }
+
 }
