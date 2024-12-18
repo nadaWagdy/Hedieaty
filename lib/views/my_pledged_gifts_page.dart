@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
 import '../models/enums.dart';
 import '../services/auth.dart';
+import '../services/notification_service.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/user.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
@@ -56,6 +57,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     myPledgedGifts[index].status = GiftStatus.available;
     Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available, '');
     User.removePledgedGift(userId!, myPledgedGifts[index].id);
+    sendUnPledgedNotification(friendIds[index], myPledgedGifts[index].name);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
     );
@@ -64,15 +66,54 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     });
   }
 
+  Future<void> sendUnPledgedNotification(String friendID, String giftName) async {
+    try {
+      final friendToken = await User.getNotificationToken(friendID);
+      final userId = Auth().currentUser?.uid;
+      final userName = await User.getUserNameById(userId!);
+      if (friendToken != null) {
+        await NotificationService().sendNotification(
+          token: friendToken,
+          title: 'Gift UnPledged!',
+          body: '$userName removed the pledge on your gift: ${giftName}',
+        );
+      } else {
+        print('Friend\'s FCM token not found.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
+  }
+
   void purchaseGift(int index) {
     final userId = Auth().currentUser?.uid;
     setState(() {
       myPledgedGifts[index].status = GiftStatus.purchased;
       Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased, userId!);
+      sendPurchasedNotification(index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
       );
     });
+  }
+
+  Future<void> sendPurchasedNotification(int index) async {
+    try {
+      final friendToken = await User.getNotificationToken(friendIds[index]);
+      final userId = Auth().currentUser?.uid;
+      final userName = await User.getUserNameById(userId!);
+      if (friendToken != null) {
+        await NotificationService().sendNotification(
+          token: friendToken,
+          title: 'Gift Purchased!',
+          body: '$userName purchased your gift: ${myPledgedGifts[index].name}',
+        );
+      } else {
+        print('Friend\'s FCM token not found.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
   }
 
 
