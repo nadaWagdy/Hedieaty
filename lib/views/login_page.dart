@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/notification_service.dart';
 import 'signup_page.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/services/auth.dart';
+import 'package:hedieaty/models/user.dart' as app_user;
 
 class LoginPage extends StatefulWidget {
   @override
@@ -27,6 +29,9 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text,
         password: _passwordController.text,
       );
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      final notification_token = await NotificationService().getToken();
+      await app_user.User.updateUserNotificationToken(userId!, notification_token);
     } on FirebaseAuthException catch (e) {
       setState(() {
         ScaffoldMessenger.of(context).showSnackBar(
