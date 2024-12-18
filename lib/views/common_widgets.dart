@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/enums.dart';
 
 final Map<String, Color> appColors = {
   'primary': Color(0xFFF41F4E),
@@ -10,33 +11,6 @@ final Map<String, Color> appColors = {
   'unselected' : Color(0xff9388A2),
   'pledged' : Color(0xffdfd8ea)
 };
-
-class Friend {
-  final String name;
-  final String profilePic;
-  final int upcomingEvents;
-  final List<Event> events;
-
-  Friend({
-    required this.name,
-    required this.profilePic,
-    required this.upcomingEvents,
-    required this.events,
-  });
-}
-
-class Event {
-  final String name;
-  final String status;
-  final String category;
-
-  Event({
-    required this.name,
-    required this.status,
-    required this.category,
-  });
-}
-
 
 class TextFieldDecoration {
 
@@ -115,4 +89,19 @@ AppBar createSubPageAppBar(String text)
     ),
     backgroundColor: appColors['primary'],
   );
+}
+
+Color? getGiftStatusColor(GiftStatus status) {
+  switch (status) {
+    case GiftStatus.pledged:
+    // return appColors['pledged'];
+    // return Color(0xfffcb6c5);
+      return Colors.tealAccent;
+    case GiftStatus.available:
+      return appColors['listCard'];
+    case GiftStatus.purchased:
+      return Colors.amberAccent;
+    default:
+      return Colors.grey;
+  }
 }
