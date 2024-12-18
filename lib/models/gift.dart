@@ -12,6 +12,7 @@ class Gift {
   GiftStatus status;
   final String eventID;
   String? pledgedBy;
+  String? imagePath;
 
   Gift({
     this.id = '',
@@ -21,7 +22,8 @@ class Gift {
     this.price,
     required this.status,
     required this.eventID,
-    this.pledgedBy
+    this.pledgedBy,
+    this.imagePath
   });
 
   Map<String, dynamic> toMap() {
@@ -33,6 +35,7 @@ class Gift {
       'price': price,
       'status': status.index,
       'event_id': eventID,
+      'imagePath' : imagePath
     };
   }
 
@@ -47,6 +50,7 @@ class Gift {
       price: map['price'],
       status: GiftStatus.values[map['status']],
       eventID: map['event_id'],
+      imagePath: map['imagePath']
     );
   }
 
@@ -59,7 +63,8 @@ class Gift {
       'price': price,
       'status': status.name,
       'event_id': eventID,
-      'pledged_by': pledgedBy
+      'pledged_by': pledgedBy,
+      'imagePath': imagePath
     };
   }
 
@@ -76,7 +81,8 @@ class Gift {
       status: GiftStatus.values.firstWhere(
               (e) => e.name == map['status'], orElse: () => GiftStatus.available),
       eventID: map['event_id'] ?? '',
-      pledgedBy: map['pledged_by']
+      pledgedBy: map['pledged_by'],
+      imagePath: map['imagePath']
     );
   }
 
