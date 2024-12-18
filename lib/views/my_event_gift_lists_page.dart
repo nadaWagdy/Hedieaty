@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
   late List<Gift> gifts = [];
   bool isLoading = true;
   final List<String> _pledgedby = [];
+  final String _defaultGiftImagePath = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -144,7 +146,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
             ),
             SizedBox(height: 20),
 
-            Text(
+            gifts.length == 0 ? SizedBox(height: 0,) : Text(
               "Gifts for ${event!.name}",
               style: TextStyle(
                 fontSize: 24,
@@ -154,6 +156,18 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
               ),
             ),
             SizedBox(height: 20),
+            gifts.length == 0 ?
+            Center(
+              child: Text('No Gifts For This Event Yet. Add Some Gifts Frist',
+                style: TextStyle(
+                    color: appColors['buttonText'],
+                    fontFamily: 'lxgw',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ) :
             Expanded(
               child: ListView.builder(
                 itemCount: gifts.length,
@@ -169,9 +183,9 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                       title: Text(
                         gifts[index].name,
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'lxgw'
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'lxgw'
                         ),
                       ),
                       subtitle: Column(
@@ -188,19 +202,19 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                           Text(
                             'Category: ${gifts[index].category?.name ?? "Unknown"}',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'lxgw',
-                              color: appColors['secondary'],
-                              fontWeight: FontWeight.bold
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                color: appColors['secondary'],
+                                fontWeight: FontWeight.bold
                             ),
                           ),
                           Text(
                             'Status: ${gifts[index].status.name}',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: 'lxgw',
-                              color: appColors['secondary'],
-                              fontWeight: FontWeight.bold
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                color: appColors['secondary'],
+                                fontWeight: FontWeight.bold
                             ),
                           ),
                           gifts[index].status != GiftStatus.available ?
@@ -212,16 +226,23 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                                 color: appColors['secondary'],
                                 fontWeight: FontWeight.bold
                             ),
-                          ) : SizedBox(height: 0,)
+                          ) : SizedBox(height: 0,),
+                          Text(
+                            'Price: \$${gifts[index].price ?? 0.0}',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'lxgw',
+                                fontWeight: FontWeight.bold
+                            ),
+                          )
                         ],
                       ),
-                      trailing: Text(
-                        'Price: \$${gifts[index].price ?? 0.0}',
-                        style: TextStyle(
-                            fontSize: 16,
-                          fontFamily: 'lxgw',
-                          fontWeight: FontWeight.bold
-                        ),
+                      trailing: CircleAvatar(
+                        backgroundImage: gifts[index].imagePath != _defaultGiftImagePath
+                            ? FileImage(File(gifts[index].imagePath!))
+                            : AssetImage(gifts[index].imagePath!)
+                        as ImageProvider,
+                        radius: 40,
                       ),
                     ),
                   );
