@@ -7,10 +7,10 @@ import 'enums.dart';
 class Event {
   String id;
   String name;
-  final DateTime date;
+  DateTime date;
   String location;
   final String description;
-  final EventStatus status;
+  EventStatus status;
   final EventCategory category;
   final List<Gift> eventGifts;
 
