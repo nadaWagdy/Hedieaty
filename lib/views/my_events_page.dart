@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/my_event_gift_lists_page.dart';
+import '../models/enums.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
-
+import 'package:hedieaty/models/gift.dart';
 import 'create_event_page.dart';
 
 class MyEventsPage extends StatefulWidget {
@@ -47,16 +48,40 @@ class _MyEventsPageState extends State<MyEventsPage> {
     }
   }
 
+  Future<bool> checkIfPledgedOrPurchased(String eventId) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final eventGifts = await Gift.fetchFromFirebase(eventId, userId!);
+
+    return eventGifts.any((gift) => gift.status == GiftStatus.pledged || gift.status == GiftStatus.purchased);
+  }
+
   Future<void> editEvent(event_model.Event event) async {
-    final TextEditingController nameController =
-    TextEditingController(text: event.name);
-    final TextEditingController locationController =
-    TextEditingController(text: event.location);
+
+    final isAllowed = await checkIfPledgedOrPurchased(event.id);
+    if (isAllowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot edit this event because it contains pledged or purchased gifts',
+            style: TextStyle(fontSize: 18),
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final TextEditingController nameController = TextEditingController(text: event.name);
+    final TextEditingController locationController = TextEditingController(text: event.location);
+    DateTime selectedDate = event.date;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, fontFamily: 'lxgw', color: appColors['primary'])),
+        title: Text(
+          'Edit Event',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, fontFamily: 'lxgw', color: appColors['primary']),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -66,24 +91,53 @@ class _MyEventsPageState extends State<MyEventsPage> {
               style: TextStyle(color: Colors.black),
               cursorColor: appColors['primary'],
             ),
-            SizedBox(height: 20,),
+            SizedBox(height: 20),
             TextField(
               controller: locationController,
               decoration: textFieldsDecoration('Location'),
               style: TextStyle(color: Colors.black),
               cursorColor: appColors['primary'],
             ),
+            SizedBox(height: 20),
+            Center(
+              child: TextButton(
+                onPressed: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      selectedDate = pickedDate;
+                    });
+                  }
+                },
+                child: Text(
+                  'Select Date: ${selectedDate.toLocal().toString().split(' ')[0]}',
+                  style: TextStyle(color: appColors['primary'], fontSize: 16),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: appColors['primary']),),
+            child: Text('Cancel', style: TextStyle(color: appColors['primary'])),
           ),
           ElevatedButton(
             onPressed: () async {
               event.name = nameController.text;
               event.location = locationController.text;
+              event.date = selectedDate;
+              if (selectedDate.year == DateTime.now().year &&
+                  selectedDate.month == DateTime.now().month &&
+                  selectedDate.day == DateTime.now().day)
+                event.status = EventStatus.current;
+              else
+                event.status = EventStatus.upcoming;
 
               final userId = FirebaseAuth.instance.currentUser?.uid;
 
@@ -106,18 +160,15 @@ class _MyEventsPageState extends State<MyEventsPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
-              padding:
-              EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              textStyle: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
     );
   }
+
 
   InputDecoration textFieldsDecoration(String text) {
     return InputDecoration(
@@ -148,6 +199,20 @@ class _MyEventsPageState extends State<MyEventsPage> {
   }
 
   Future<void> deleteEvent(event_model.Event event) async {
+    final isAllowed = await checkIfPledgedOrPurchased(event.id);
+    if (isAllowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot delete this event because it contains pledged or purchased gifts',
+            style: TextStyle(fontSize: 18),
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     final userId = FirebaseAuth.instance.currentUser?.uid;
     final confirmation = await showDialog<bool>(
       context: context,
