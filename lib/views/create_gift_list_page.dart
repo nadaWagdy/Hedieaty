@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:hedieaty/models/gift.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/enums.dart';
 import '../services/db_service.dart';
 import 'common_widgets.dart';
@@ -26,6 +27,9 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
   List<String> eventsIds = [];
   List<Gift> savedGifts = [];
 
+  final ImagePicker _picker = ImagePicker();
+  String _giftImagePath = 'assets/images/default.png';
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +53,6 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
         });
       }
     } catch (e) {
-      // print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading events',
           style: TextStyle(fontSize: 18),
@@ -97,6 +100,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
       price: double.tryParse(_priceController.text.trim()),
       status: GiftStatus.available,
       eventID: _selectedEventId ?? '',
+      imagePath: _giftImagePath
     );
 
     await Gift.saveDraft(gift);
@@ -109,6 +113,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
     _priceController.clear();
     selectedCategory = null;
     selectedEvent = null;
+    _giftImagePath = 'assets/images/default.png';
   }
 
   Future<void> _saveGiftList() async {
@@ -128,6 +133,16 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
         style: TextStyle(fontSize: 18),
       )),
     );
+  }
+
+  Future<void> _uploadGiftImage() async {
+    final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      setState(() {
+      _giftImagePath = pickedImage.path;
+      });
+    }
   }
 
   @override
@@ -184,6 +199,31 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
                   cursorColor: appColors['buttonText'],
                 ),
                 SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _uploadGiftImage,
+                    child: Text('Choose Gift Image'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appColors['primary'],
+                      foregroundColor: appColors['buttonText'],
+                      shadowColor: Colors.blueGrey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      textStyle: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                ),
+                SizedBox(height: 10,),
+                _giftImagePath == 'assets/images/default.png' ? SizedBox(height: 0,) : 
+                    Center(
+                          child: Text('Gift Image Selected', style: TextStyle(color: appColors['primary'], fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'lxgw'),)
+                    ),
+                SizedBox(height: 20,),
                 DropdownButtonFormField<String>(
                   decoration: TextFieldDecoration.searchInputDecoration('Category'),
                   style: TextStyle(
