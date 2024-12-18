@@ -40,11 +40,31 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
         gifts[index].status = GiftStatus.pledged;
         Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged, userId!);
         user_model.User.addPledgedGift(userId, widget.friendId, widget.eventId, gifts[index].id);
+        sendPledgedNotification(index);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${gifts[index].name} pledged!')),
         );
       }
     });
+  }
+
+  Future<void> sendPledgedNotification(int index) async {
+    try {
+      final friendToken = await user_model.User.getNotificationToken(widget.friendId);
+      final userId = Auth().currentUser?.uid;
+      final userName = await user_model.User.getUserNameById(userId!);
+      if (friendToken != null) {
+        await NotificationService().sendNotification(
+          token: friendToken,
+          title: 'Gift Pledged!',
+          body: '$userName pledged your gift: ${gifts[index].name}',
+        );
+      } else {
+        print('Friend\'s FCM token not found.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
   }
 
   Future<void> _loadGifts() async {
