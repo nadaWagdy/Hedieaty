@@ -22,7 +22,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
   String _status = 'upcoming';
 
   List<String> _categories = ['personal', 'birthday', 'wedding', 'graduation', 'other'];
-  List<String> _statuses = ['upcoming', 'current', 'past'];
 
   void _saveEvent() async {
     if (!_formKey.currentState!.validate()) return;
@@ -34,6 +33,13 @@ class _CreateEventPageState extends State<CreateEventPage> {
       );
       return;
     }
+
+    if (_selectedDate.year == DateTime.now().year &&
+        _selectedDate.month == DateTime.now().month &&
+        _selectedDate.day == DateTime.now().day)
+      _status = EventStatus.current.name;
+    else
+      _status = EventStatus.upcoming.name;
 
     final newEvent = app_event.Event(
       name: _eventNameController.text,
@@ -166,26 +172,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   },
                 ),
                 SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  style: TextStyle(
-                      color: appColors['primary'],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  decoration: TextFieldDecoration.searchInputDecoration('Status'),
-                  items: _statuses.map((status) {
-                    return DropdownMenuItem(
-                      value: status,
-                      child: Text(status),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _status = value!;
-                    });
-                  },
-                ),
                 SizedBox(height: 16),
                 Center(
                   child: ElevatedButton(
@@ -221,7 +207,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _selectedDate) {
