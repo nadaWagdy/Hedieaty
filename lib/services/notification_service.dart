@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+
+import 'get_server_key.dart';
 
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
   print('title: ${message.notification?.title}');
@@ -79,4 +82,42 @@ class NotificationService
     final FCMToken = await _firebaseMessaging.getToken();
     return FCMToken!;
   }
+
+Future<void> sendNotification({
+  required String token,
+  required String title,
+  required String body,
+}) async {
+  final url = Uri.parse('https://fcm.googleapis.com/v1/projects/hedieaty-534ec/messages:send');
+  final serverToken = await GetServerKey().getServerKeyToken();
+  print('server token $serverToken');
+  final headers = {
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $serverToken',
+  };
+  final payload = {
+    "message":{
+      "token": token,
+      "notification":{
+        "body": body,
+        "title": title
+      }
+    }
+  };
+
+  try {
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(payload),
+    );
+    if (response.statusCode == 200) {
+      print('Notification sent successfully.');
+    } else {
+      print('Failed to send notification. Status: ${response.statusCode} + ${response.reasonPhrase}');
+    }
+  } catch (e) {
+    print('Error sending notification: $e');
+  }
+}
 }
