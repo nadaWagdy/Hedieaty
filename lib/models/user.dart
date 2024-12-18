@@ -222,6 +222,11 @@ class User {
     }
   }
 
-
+  static Future<void> updateUserNotificationToken(String userId, String token) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId');
+    await ref.update({
+      'NotificationToken': token,
+    });
+  }
 
 }
