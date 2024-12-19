@@ -22,15 +22,16 @@ class DatabaseService {
     final path = join(await getDatabasesPath(), 'drafts.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade
     );
   }
 
   void _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS DraftUsers (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         email TEXT,
         notification_preferences INTEGER,
@@ -39,7 +40,7 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS DraftEvents (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         date TEXT,
         location TEXT,
@@ -51,7 +52,7 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS DraftGifts (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
       description TEXT,
       category INTEGER,
@@ -78,5 +79,65 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [user.id],
     );
+  }
+
+  void _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+
+      await db.execute(''' 
+      CREATE TABLE DraftUsers_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        notification_preferences INTEGER,
+        profile_picture TEXT
+      )
+    ''');
+      await db.execute(''' 
+      CREATE TABLE DraftEvents_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        date TEXT,
+        location TEXT,
+        description TEXT,
+        status INTEGER,
+        category INTEGER,
+        user_id TEXT
+      )
+    ''');
+      await db.execute(''' 
+      CREATE TABLE DraftGifts_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        description TEXT,
+        category INTEGER,
+        price REAL,
+        status INTEGER,
+        event_id TEXT,
+        imagePath TEXT
+      )
+    ''');
+
+      await db.execute(''' 
+      INSERT INTO DraftUsers_new (id, name, email, notification_preferences, profile_picture)
+      SELECT id, name, email, notification_preferences, profile_picture FROM DraftUsers
+    ''');
+      await db.execute(''' 
+      INSERT INTO DraftEvents_new (id, name, date, location, description, status, category, user_id)
+      SELECT id, name, date, location, description, status, category, user_id FROM DraftEvents
+    ''');
+      await db.execute(''' 
+      INSERT INTO DraftGifts_new (id, name, description, category, price, status, event_id, imagePath)
+      SELECT id, name, description, category, price, status, event_id, imagePath FROM DraftGifts
+    ''');
+
+      await db.execute('''DROP TABLE IF EXISTS DraftUsers''');
+      await db.execute('''DROP TABLE IF EXISTS DraftEvents''');
+      await db.execute('''DROP TABLE IF EXISTS DraftGifts''');
+
+      await db.execute('''ALTER TABLE DraftUsers_new RENAME TO DraftUsers''');
+      await db.execute('''ALTER TABLE DraftEvents_new RENAME TO DraftEvents''');
+      await db.execute('''ALTER TABLE DraftGifts_new RENAME TO DraftGifts''');
+    }
   }
 }
