@@ -243,4 +243,20 @@ class User {
     }
   }
 
+  static Future<bool?> fetchNotificationPreferences(String userId) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users/$userId/notificationPreferences');
+      final snapshot = await ref.get();
+      if (snapshot.exists) {
+        return snapshot.value as bool;
+      } else {
+        print("Notification preferences not found for user: $userId");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching notification preferences: $e");
+      return null;
+    }
+  }
+
 }
