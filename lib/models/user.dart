@@ -259,4 +259,24 @@ class User {
     }
   }
 
+  static Future<User?> getUserByEmail(String email) async {
+    try {
+      final ref = FirebaseDatabase.instance.ref('users');
+      final snapshot = await ref.get();
+      if (snapshot.exists && snapshot.value is Map) {
+        final users = Map<String, dynamic>.from(snapshot.value as Map);
+        for (var entry in users.entries) {
+          final userMap = Map<String, dynamic>.from(entry.value);
+          if (userMap['email'] == email) {
+            return User.fromFirebaseMap(userMap);
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching user by email: $e");
+      return null;
+    }
+  }
+
 }
