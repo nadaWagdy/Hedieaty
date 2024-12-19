@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/widget_tree.dart';
@@ -74,7 +73,7 @@ class _AppLayoutState extends State<AppLayout> {
                 final user = filteredUsers[index];
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: AssetImage(user.profilePicture),
+                    backgroundImage: getImageProvider(user.profilePicture),
                   ),
                   title: Text(user.name),
                   subtitle: Text(user.email),
@@ -91,10 +90,123 @@ class _AppLayoutState extends State<AppLayout> {
           ),
           actions: [
             TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
+              child: Text('Add Manually', style: TextStyle(color: appColors['primary'], fontSize: 18),),
+              onPressed: () async {
+                Navigator.pop(context);
+                String? friendEmail = await _showAddFriendManuallyDialog(build_context);
+                if (friendEmail != null && friendEmail.isNotEmpty) {
+                  _addFriendManually(friendEmail, context, build_context);
+                } else {
+                  ScaffoldMessenger.of(build_context).showSnackBar(
+                    SnackBar(
+                      content: Text('Email Field Was Empty'),
+                    ),
+                  );
+                }
               },
+            ),
+            TextButton(
+              child: Text('Cencel', style: TextStyle(color: appColors['primary'], fontSize: 18),),
+              onPressed: () async {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _addFriendManually(String email, BuildContext context, BuildContext friendContext) async {
+    final userId = Auth().currentUser?.uid;
+    final newFriend = await User.getUserByEmail(email);
+    if(newFriend != null){
+      if (newFriend.id == userId) {
+        ScaffoldMessenger.of(friendContext).showSnackBar(
+          SnackBar(
+            content: Text('This is your email'),
+          ),
+        );
+        return;
+      }
+      _addFriend(newFriend, context);
+    } else {
+      ScaffoldMessenger.of(friendContext).showSnackBar(
+        SnackBar(
+          content: Text('No User With This Email Was Found. Try Another Email'),
+        ),
+      );
+    }
+  }
+
+  Future<String?> _showAddFriendManuallyDialog(BuildContext context) async {
+    TextEditingController controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Friend By Email',
+            style: TextStyle(
+                color: appColors['primary'],
+                fontFamily: 'lxgw',
+                fontWeight: FontWeight.bold,
+                fontSize: 24),
+          ),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: 'Enter Friend Email',
+              labelStyle: TextStyle(
+                color: appColors['primary'],
+                fontWeight: FontWeight.bold,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(
+                  color: Colors.black,
+                  width: 1.5,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: const BorderSide(
+                  color: Color(0xFFF41F4E),
+                  width: 2.0,
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, controller.text);
+              },
+              child: Text('Save', style: TextStyle(fontSize: 18),),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: appColors['primary'],
+                foregroundColor: appColors['buttonText'],
+                shadowColor: Colors.blueGrey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                padding:
+                EdgeInsets.symmetric(horizontal: 32, vertical: 10),
+                textStyle: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel',  style: TextStyle(color: appColors['primary'], fontSize: 18)),
             ),
           ],
         );
@@ -241,7 +353,6 @@ class _HomePageState extends State<HomePage> {
   List<User> friendsList = [];
   String searchQuery = '';
   bool isLoading = true;
-  String _defaultProfileImagePath = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -463,7 +574,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return isLoading
-        ? Center(child: CircularProgressIndicator())
+        ? Center(child: CircularProgressIndicator(color: appColors['primary'],))
         : Column(
       children: [
         SizedBox(
@@ -577,10 +688,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: friend.profilePicture != _defaultProfileImagePath
-                            ? FileImage(File(friend.profilePicture))
-                            : AssetImage(friend.profilePicture)
-                        as ImageProvider,
+                        backgroundImage: getImageProvider(friend.profilePicture),
                       ),
                       title: Text(friend.name),
                       subtitle: Text(friend.email),
