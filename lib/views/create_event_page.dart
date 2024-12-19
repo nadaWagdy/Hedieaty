@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../models/event.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/event.dart' as app_event;
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:hedieaty/services/auth.dart';
 import 'package:hedieaty/models/enums.dart';
+import '../services/db_service.dart';
 
 class CreateEventPage extends StatefulWidget {
   @override
@@ -23,7 +25,21 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
   List<String> _categories = ['personal', 'birthday', 'wedding', 'graduation', 'other'];
 
-  void _saveEvent() async {
+  List<Event> savedEvents = [];
+
+  void initState() {
+    super.initState();
+    _loadSavedEvents();
+  }
+
+  Future<void> _loadSavedEvents() async {
+    final drafts = await Event.getDrafts();
+    setState(() {
+      savedEvents = drafts;
+    });
+  }
+
+  Future<void> _addEvent() async {
     if (!_formKey.currentState!.validate()) return;
 
     firebase_auth.User? user = Auth().currentUser;
@@ -51,19 +67,35 @@ class _CreateEventPageState extends State<CreateEventPage> {
     );
 
     try {
-      await app_event.Event.publishToFirebase(newEvent, user.uid);
-
       await app_event.Event.saveDraft(newEvent);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Event saved: ${newEvent.name}')),
-      );
       _resetForm();
+      setState(() {
+        savedEvents.add(newEvent);
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving event: $e')),
+        SnackBar(content: Text('Error adding event: $e')),
       );
     }
+  }
+
+  void _saveEventsList() async {
+    final userId = Auth().currentUser?.uid;
+    for (Event event in savedEvents) {
+      await Event.publishToFirebase(event, userId!);
+    }
+
+    final db = await DatabaseService().database;
+    await db.delete('DraftEvents');
+    setState(() {
+      savedEvents.clear();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Events published successfully!',
+        style: TextStyle(fontSize: 18),
+      )),
+    );
   }
 
   void _resetForm() {
@@ -172,29 +204,78 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   },
                 ),
                 SizedBox(height: 16),
-                SizedBox(height: 16),
+                SizedBox(height: 20),
                 Center(
-                  child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _saveEvent();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: appColors['primary'],
-                    foregroundColor: appColors['buttonText'],
-                    shadowColor: Colors.blueGrey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                  child: ElevatedButton.icon(
+                    onPressed: _addEvent,
+                    icon: Icon(Icons.add),
+                    label: Text('Add Event'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appColors['primary'],
+                      foregroundColor: appColors['buttonText'],
+                      shadowColor: Colors.blueGrey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      textStyle: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  child: Text('Save Event'),
-                ),)
+                ),
+                SizedBox(height: 20),
+                ListView.separated(
+                  physics: NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: savedEvents.length,
+                  itemBuilder: (context, index) {
+                    final event = savedEvents[index];
+                    return Card(
+                      color: appColors['listCard'],
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ListTile(
+                        title: Text(event.name),
+                        subtitle: Text('Category: ${event.category.name}'),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () async {
+                            final db = await DatabaseService().database;
+                            await db.delete('DraftEvents', where: 'id = ?', whereArgs: [event.id]);
+                            setState(() {
+                              savedEvents.removeAt(index);
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (context, index) => Divider(),
+                ),
+                SizedBox(height: 10,),
+                Center(
+                  child: savedEvents.isEmpty == false ? ElevatedButton(
+                    onPressed: _saveEventsList,
+                    child: Text('Publish Events'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appColors['primary'],
+                      foregroundColor: appColors['buttonText'],
+                      shadowColor: Colors.blueGrey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      textStyle: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ) : SizedBox(height: 10,),
+                ),
               ],
             ),
           ),
