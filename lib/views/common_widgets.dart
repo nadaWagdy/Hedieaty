@@ -105,3 +105,44 @@ Color? getGiftStatusColor(GiftStatus status) {
       return Colors.grey;
   }
 }
+
+Color? getGiftStatusTextColor(GiftStatus status) {
+  switch (status) {
+    case GiftStatus.pledged:
+      return Colors.tealAccent;
+    case GiftStatus.available:
+      return Colors.green;
+    case GiftStatus.purchased:
+      return Colors.amberAccent;
+    default:
+      return Colors.grey;
+  }
+}
+
+InputDecoration textFieldsDecoration(String text) {
+  return InputDecoration(
+    labelText: '$text',
+    labelStyle: TextStyle(
+      color: appColors['primary'],
+      fontWeight: FontWeight.bold,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8.0),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10.0),
+      borderSide: BorderSide(
+        color: Colors.black,
+        width: 1.5,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8.0),
+      borderSide: const BorderSide(
+        color: Color(0xFFF41F4E),
+        width: 2.0,
+      ),
+    ),
+  );
+}
