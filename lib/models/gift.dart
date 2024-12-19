@@ -5,10 +5,10 @@ import '../services/db_service.dart';
 
 class Gift {
   String id;
-  final String name;
-  final String? description;
-  final GiftCategory? category;
-  final double? price;
+  String name;
+  String? description;
+  GiftCategory? category;
+  double? price;
   GiftStatus status;
   final String eventID;
   String? pledgedBy;
@@ -28,7 +28,6 @@ class Gift {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'description': description,
       'category': category?.index,
@@ -41,7 +40,7 @@ class Gift {
 
   static Gift fromMap(Map<String, dynamic> map) {
     return Gift(
-      id: map['id'],
+      id: map['id'].toString(),
       name: map['name'],
       description: map['description'],
       category: map['category'] != null
@@ -145,6 +144,16 @@ class Gift {
       'status': newStatus.name,
       'pledged_by' : pledgedBy
     });
+  }
+
+  Future<void> updateInFirebase(String userId, String eventId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$id');
+    await ref.update(toFirebaseMap());
+  }
+
+  static Future<void> deleteFromFirebase(String userId, String eventId, String giftId) async {
+    final ref = FirebaseDatabase.instance.ref('users/$userId/events/$eventId/gifts/$giftId');
+    await ref.remove();
   }
 
 }
