@@ -27,7 +27,6 @@ class Event {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'date': date.toIso8601String(),
       'location': location,
@@ -39,7 +38,7 @@ class Event {
 
   static Event fromMap(Map<String, dynamic> map) {
     return Event(
-      id: map['id'],
+      id: map['id'].toString(),
       name: map['name'],
       date: DateTime.parse(map['date']),
       location: map['location'] ?? '',
