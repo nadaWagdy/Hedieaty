@@ -8,6 +8,8 @@ import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/models/user.dart' as user_model;
+import 'package:hedieaty/views/gift_details_page.dart';
+import 'package:image_picker/image_picker.dart';
 import 'common_widgets.dart';
 
 class MyEventGiftsListPage extends StatefulWidget {
@@ -25,6 +27,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
   bool isLoading = true;
   final List<String> _pledgedby = [];
   final String _defaultGiftImagePath = 'assets/images/default.png';
+  final _userId = FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
@@ -91,6 +94,181 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
       }
     });
   }
+
+  Future<void> editGift(Gift gift) async {
+    final isAllowed = gift.status == GiftStatus.available;
+    if (!isAllowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot edit this gift because it is ${gift.status==GiftStatus.pledged ? 'pledged' : 'purchased' }',
+            style: TextStyle(fontSize: 18),
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final TextEditingController nameController = TextEditingController(text: gift.name);
+    final TextEditingController descriptionController = TextEditingController(text: gift.description ?? '');
+    final TextEditingController priceController = TextEditingController(text: gift.price.toString());
+    String? selectedCategory = gift.category?.name;
+    String _giftImagePath = gift.imagePath ?? _defaultGiftImagePath;
+    final ImagePicker picker = ImagePicker();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Edit Gift',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontFamily: 'lxgw',
+            color: appColors['primary'],
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: textFieldsDecoration('Gift Name'),
+                style: TextStyle(color: Colors.black),
+                cursorColor: appColors['primary'],
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: descriptionController,
+                decoration: textFieldsDecoration('Description'),
+                style: TextStyle(color: Colors.black),
+                cursorColor: appColors['primary'],
+              ),
+              SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                value: selectedCategory,
+                items: GiftCategory.values.map((category) {
+                  return DropdownMenuItem<String>(
+                    value: category.name,
+                    child: Text(category.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  selectedCategory = value;
+                },
+                decoration: textFieldsDecoration('Category'),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: priceController,
+                decoration: textFieldsDecoration('Price'),
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: Colors.black),
+                cursorColor: appColors['primary'],
+              ),
+              SizedBox(height: 20,),
+              Center(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
+
+                      if (pickedImage != null) {
+                        setState(() {
+                          _giftImagePath = pickedImage.path;
+                        });
+                      }
+                    },
+                    child: Text('Change Gift Image'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: appColors['primary'],
+                      foregroundColor: appColors['buttonText'],
+                      shadowColor: Colors.blueGrey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      textStyle: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+              )
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: appColors['primary'])),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              gift.name = nameController.text;
+              gift.description = descriptionController.text.isNotEmpty ? descriptionController.text : null;
+              gift.price = double.tryParse(priceController.text) ?? gift.price;
+              gift.category = GiftCategory.values.firstWhere(
+                    (category) => category.name == selectedCategory,
+                orElse: () => gift.category!,
+              );
+              gift.imagePath = _giftImagePath;
+
+              final userId = FirebaseAuth.instance.currentUser?.uid;
+              await gift.updateInFirebase(userId!, widget.eventId);
+
+              setState(() {
+                int index = gifts.indexWhere((g) => g.id == gift.id);
+                if (index != -1) {
+                  gifts[index] = gift;
+                }
+              });
+
+              Navigator.of(context).pop();
+            },
+            child: Text('Save'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: appColors['primary'],
+              foregroundColor: appColors['buttonText'],
+              shadowColor: Colors.blueGrey,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool isDeleteAllowed(Gift gift) {
+    return gift.status == GiftStatus.available;
+  }
+
+  void deleteGift(Gift gift) {
+    final isAllowed = gift.status == GiftStatus.available;
+    if (!isAllowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You cannot delete this gift because it is already pledged or purchased',
+            style: TextStyle(fontSize: 18),
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    Gift.deleteFromFirebase(userId!, widget.eventId, gift.id);
+    setState(() {
+      gifts.removeWhere((e) => e.id == gift.id);
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -172,79 +350,155 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
               child: ListView.builder(
                 itemCount: gifts.length,
                 itemBuilder: (context, index) {
-                  return Card(
-                    color: getGiftStatusColor(gifts[index].status),
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                  return Dismissible(
+                    key: Key(gifts[index].id),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      deleteGift(gifts[index]);
+                    },
+                    confirmDismiss: (direction) async {
+                      final bool? confirm = await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Confirm Deletion'),
+                            content: Text('Are you sure you want to delete this item?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false),
+                                child: Text('Cancel', style: TextStyle(color: appColors['primary']),),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                child: Text('Delete'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: appColors['primary'],
+                                  foregroundColor: appColors['buttonText'],
+                                  shadowColor: Colors.blueGrey,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  padding:
+                                  EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                  textStyle: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      bool delete = confirm! && isDeleteAllowed(gifts[index]);
+                      if(!isDeleteAllowed(gifts[index])) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text( 'You cannot delete this gift because it is already ${gifts[index].status==GiftStatus.pledged ? 'pledged' : 'purchased' }',
+                              style: TextStyle(fontSize: 18),),
+                            duration: Duration(seconds: 5),
+                          ),
+                        );
+                      }
+                      return delete;
+                    },
+                    background: Container(
+                      color: appColors['primary'],
+                      alignment: Alignment.centerRight,
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Icon(Icons.delete, color: Colors.white),
                     ),
-                    child: ListTile(
-                      leading: Icon(CupertinoIcons.gift_fill, size: 30,),
-                      title: Text(
-                        gifts[index].name,
-                        style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'lxgw'
+                      child: Card(
+                        color: getGiftStatusColor(gifts[index].status),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ListTile(
+                          onTap: (){
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => GiftDetailsPage(giftId: gifts[index].id, eventId: widget.eventId, userId: _userId!),
+                              ),
+                            );
+                          },
+                          leading: CircleAvatar(
+                            backgroundImage: gifts[index].imagePath != _defaultGiftImagePath
+                                ? FileImage(File(gifts[index].imagePath!))
+                                : AssetImage(gifts[index].imagePath!)
+                            as ImageProvider,
+                            radius: 40,
+                          ),
+                          title: Text(
+                            gifts[index].name,
+                            style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'lxgw'
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                gifts[index].description ?? 'No description available',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontFamily: 'lxgw',
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Category: ${gifts[index].category?.name ?? "Unknown"}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontFamily: 'lxgw',
+                                    color: appColors['secondary'],
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ),
+                              Text(
+                                'Status: ${gifts[index].status.name}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontFamily: 'lxgw',
+                                    color: appColors['secondary'],
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ),
+                              gifts[index].status != GiftStatus.available ?
+                              Text(
+                                '${gifts[index].status == GiftStatus.pledged ? 'Pledged By' : 'Purchased By'}: ${_pledgedby[index]}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontFamily: 'lxgw',
+                                    color: appColors['secondary'],
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ) : SizedBox(height: 0,),
+                              Text(
+                                'Price: \$${gifts[index].price ?? 0.0}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontFamily: 'lxgw',
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: gifts[index].status == GiftStatus.available ? IconButton(
+                            icon: Icon(
+                              Icons.edit,
+                              color: appColors['primary'],
+                            ),
+                            onPressed: (){
+                              editGift(gifts[index]);
+                            },
+                          ) : SizedBox(height: 0,),
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            gifts[index].description ?? 'No description available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontFamily: 'lxgw',
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Category: ${gifts[index].category?.name ?? "Unknown"}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                color: appColors['secondary'],
-                                fontWeight: FontWeight.bold
-                            ),
-                          ),
-                          Text(
-                            'Status: ${gifts[index].status.name}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                color: appColors['secondary'],
-                                fontWeight: FontWeight.bold
-                            ),
-                          ),
-                          gifts[index].status != GiftStatus.available ?
-                          Text(
-                            'Pledged By: ${_pledgedby[index]}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                color: appColors['secondary'],
-                                fontWeight: FontWeight.bold
-                            ),
-                          ) : SizedBox(height: 0,),
-                          Text(
-                            'Price: \$${gifts[index].price ?? 0.0}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                fontWeight: FontWeight.bold
-                            ),
-                          )
-                        ],
-                      ),
-                      trailing: CircleAvatar(
-                        backgroundImage: gifts[index].imagePath != _defaultGiftImagePath
-                            ? FileImage(File(gifts[index].imagePath!))
-                            : AssetImage(gifts[index].imagePath!)
-                        as ImageProvider,
-                        radius: 40,
-                      ),
-                    ),
                   );
                 },
               ),
