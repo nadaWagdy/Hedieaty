@@ -282,7 +282,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator(color: appColors['primary'],))
             : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

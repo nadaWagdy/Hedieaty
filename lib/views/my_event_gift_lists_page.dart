@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -275,7 +274,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
     return Scaffold(
       appBar: createSubPageAppBar(isLoading == false ? event!.name : ''),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: appColors['primary'],))
           : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -425,10 +424,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                             );
                           },
                           leading: CircleAvatar(
-                            backgroundImage: gifts[index].imagePath != _defaultGiftImagePath
-                                ? FileImage(File(gifts[index].imagePath!))
-                                : AssetImage(gifts[index].imagePath!)
-                            as ImageProvider,
+                            backgroundImage: getImageProvider(gifts[index].imagePath),
                             radius: 40,
                           ),
                           title: Text(

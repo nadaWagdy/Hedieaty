@@ -77,7 +77,7 @@ class _EventListPageState extends State<EventListPage> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage(_friend!.profilePicture),
+                  backgroundImage: getImageProvider(_friend!.profilePicture),
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -113,7 +113,7 @@ class _EventListPageState extends State<EventListPage> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: isLoading ?
-                    Center(child: CircularProgressIndicator())
+                    Center(child: CircularProgressIndicator(color: appColors['primary'],))
                         : Card(
                       color: appColors['listCard'],
                       elevation: 4,

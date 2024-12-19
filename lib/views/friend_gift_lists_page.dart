@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/enums.dart';
@@ -26,7 +25,6 @@ class FriendsGiftListPage extends StatefulWidget {
 class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
   late List<Gift> gifts;
   bool isLoading = true;
-  String _defaultGiftImage = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -125,10 +123,7 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: gift.imagePath != _defaultGiftImage
-                            ? FileImage(File(gift.imagePath!))
-                            : AssetImage(gift.imagePath!)
-                        as ImageProvider,
+                        backgroundImage:getImageProvider(gift.imagePath),
                       ),
                       title: Text(
                         gift.name,

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import '../services/db_service.dart';
@@ -20,8 +19,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final DatabaseService _dbService = DatabaseService();
 
   final ImagePicker _picker = ImagePicker();
-
-  String _default_image_path = 'assets/images/default.png' ;
 
   @override
   void initState() {
@@ -221,7 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_user == null) {
       return Scaffold(
         appBar: createSubPageAppBar('Profile'),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: appColors['primary'],)),
       );
     }
 
@@ -236,9 +233,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: _user!.profilePicture != _default_image_path
-                      ? FileImage(File(_user!.profilePicture))
-                      : AssetImage(_user!.profilePicture),
+                  backgroundImage: getImageProvider(_user!.profilePicture),
                 ),
                 SizedBox(width: 16),
                 Expanded(

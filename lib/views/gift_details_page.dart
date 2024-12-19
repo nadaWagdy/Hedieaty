@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
@@ -25,7 +24,6 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
   Gift? gift;
   bool isLoading = true;
   StreamSubscription<DatabaseEvent>? giftStream;
-  final _defaultImagePath = 'assets/images/default.png';
 
   @override
   void initState() {
@@ -78,9 +76,18 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
               if (gift!.imagePath != null)
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: gift!.imagePath != _defaultImagePath
-                      ? Image.file(File(gift!.imagePath!))
-                      : Image.asset(gift!.imagePath!),
+                  child: FutureBuilder<Widget>(
+                    future: getImageWidget(gift!.imagePath),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                        return snapshot.data!;
+                      } else if (snapshot.hasError) {
+                        return Image.network('https://unsplash.com/photos/mobile-notification-badge-symbol-on-orange-background-safety-warning-sign-warning-on-dangers-of-smartphone-fraud-online-scam-alerts-data-security-3d-render-illustration-Rl9BcV5H04Q');
+                      } else {
+                        return CircularProgressIndicator(color: appColors['primary'],);
+                      }
+                    },
+                  ),
                 ),
               ListTile(
                 title: Center(

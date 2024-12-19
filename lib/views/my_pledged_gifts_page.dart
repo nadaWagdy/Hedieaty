@@ -134,7 +134,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
         backgroundColor: appColors['primary'],
       ),
       body: isLoading ?
-      Center(child: CircularProgressIndicator(),)
+      Center(child: CircularProgressIndicator(color: appColors['primary'],),)
           : Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
