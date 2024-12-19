@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
+import '../controllers/user_controller.dart';
 import '../models/enums.dart';
 import '../services/auth.dart';
 import '../services/notification_service.dart';
@@ -68,6 +69,10 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
 
   Future<void> sendUnPledgedNotification(String friendID, String giftName) async {
     try {
+      bool isEnabled = await UserController.isNotificationEnabled(friendID);
+      if(!isEnabled){
+        return;
+      }
       final friendToken = await User.getNotificationToken(friendID);
       final userId = Auth().currentUser?.uid;
       final userName = await User.getUserNameById(userId!);
@@ -99,6 +104,10 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
 
   Future<void> sendPurchasedNotification(int index) async {
     try {
+      bool isEnabled = await UserController.isNotificationEnabled(friendIds[index]);
+      if(!isEnabled){
+        return;
+      }
       final friendToken = await User.getNotificationToken(friendIds[index]);
       final userId = Auth().currentUser?.uid;
       final userName = await User.getUserNameById(userId!);
