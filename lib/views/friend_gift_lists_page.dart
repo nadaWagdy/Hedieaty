@@ -7,6 +7,8 @@ import 'package:hedieaty/services/notification_service.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/models/user.dart' as user_model;
+import 'package:hedieaty/views/gift_details_page.dart';
+import '../controllers/user_controller.dart';
 import '../services/auth.dart';
 
 class FriendsGiftListPage extends StatefulWidget {
@@ -50,6 +52,10 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
 
   Future<void> sendPledgedNotification(int index) async {
     try {
+      bool isEnabled = await UserController.isNotificationEnabled(widget.friendId);
+      if(!isEnabled){
+        return;
+      }
       final friendToken = await user_model.User.getNotificationToken(widget.friendId);
       final userId = Auth().currentUser?.uid;
       final userName = await user_model.User.getUserNameById(userId!);
@@ -174,7 +180,13 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                       ),
                       tileColor: getGiftStatusColor(gift.status),
                       onTap: () {
-
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                GiftDetailsPage(giftId: gift.id, eventId: widget.eventId, userId: widget.friendId),
+                          ),
+                        );
                       },
                     ),
                   ),
