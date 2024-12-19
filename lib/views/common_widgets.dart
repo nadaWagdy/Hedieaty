@@ -1,10 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/enums.dart';
 
 final Map<String, Color> appColors = {
   'primary': Color(0xFFF41F4E),
   'secondary': Color(0xFF0B192C),
-  'background': Color(0xff000000),
+  'background': Colors.grey.shade900,
   'buttonText': Color(0xFFffffff),
   'listCard' : Color(0xffffffff),
   'eventAlert' : Color(0xFFF41F4E),
@@ -94,8 +95,6 @@ AppBar createSubPageAppBar(String text)
 Color? getGiftStatusColor(GiftStatus status) {
   switch (status) {
     case GiftStatus.pledged:
-    // return appColors['pledged'];
-    // return Color(0xfffcb6c5);
       return Colors.tealAccent;
     case GiftStatus.available:
       return appColors['listCard'];
@@ -146,3 +145,40 @@ InputDecoration textFieldsDecoration(String text) {
     ),
   );
 }
+
+Future<Widget> getImageWidget(String? imagePath) async {
+  try {
+    if (imagePath != null && File(imagePath).existsSync()) {
+      return Image.file(File(imagePath));
+    } else if (imagePath != null && knownAssets.contains(imagePath)) {
+      return Image.asset(imagePath);
+    } else {
+      return Image.network(imagePath!);
+    }
+  } catch (e) {
+    return Image.network('https://plus.unsplash.com/premium_photo-1682310096066-20c267e20605?q=80&w=1824&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+  }
+}
+
+List<String> knownAssets = [
+  'assets/images/profile1.jpg',
+  'assets/images/profile2.jpg',
+  'assets/images/profile3.jpg',
+  'assets/images/profile4.jpg',
+  'assets/images/default.png'
+];
+
+ImageProvider getImageProvider(String? imagePath) {
+  try {
+    if (imagePath != null && File(imagePath).existsSync()) {
+      return FileImage(File(imagePath));
+    } else if (imagePath != null && knownAssets.contains(imagePath)) {
+      return AssetImage(imagePath);
+    } else {
+      return NetworkImage(imagePath!);
+    }
+  } catch (e) {
+    return NetworkImage('https://plus.unsplash.com/premium_photo-1682310096066-20c267e20605?q=80&w=1824&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+  }
+}
+
