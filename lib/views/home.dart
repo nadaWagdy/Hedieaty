@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/widget_tree.dart';
+import '../controllers/user_controller.dart';
 import '../models/user.dart';
+import '../services/notification_service.dart';
 import 'friend_events_page.dart';
 import 'create_event_page.dart';
 import 'create_gift_list_page.dart';
@@ -46,7 +48,6 @@ class AppLayout extends StatefulWidget {
 
 
 class _AppLayoutState extends State<AppLayout> {
-  // const AppLayout({super.key});
 
   Future<void> signOut() async {
     await Auth().signOut();
@@ -136,13 +137,43 @@ class _AppLayoutState extends State<AppLayout> {
       friend.id: true,
     });
 
+    DatabaseReference friendUserRef = FirebaseDatabase.instance.ref('users/${friend.id}/friends');
+    await friendUserRef.update({
+      currentUser: true,
+    });
+
+    sendAddedFriendNotification(friend.id);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${friend.name} added as a friend!'),
       ),
     );
+    setState(() {
+    });
     print('${friend.name} added as a friend!');
+  }
 
+  Future<void> sendAddedFriendNotification(String friendID) async {
+    try {
+      bool isEnabled = await UserController.isNotificationEnabled(friendID);
+      if(!isEnabled){
+        return;
+      }
+      final friendToken = await User.getNotificationToken(friendID);
+      final userId = Auth().currentUser?.uid;
+      final userName = await User.getUserNameById(userId!);
+      if (friendToken != null) {
+        await NotificationService().sendNotification(
+          token: friendToken,
+          title: 'You Have A New Friend!',
+          body: '$userName added you as a friend',
+        );
+      } else {
+        print('Friend\'s FCM token not found.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
   }
 
 
@@ -216,6 +247,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _fetchFriends();
+    _addFriendsListener();
   }
 
   Future<void> _fetchFriends() async {
@@ -264,6 +296,92 @@ class _HomePageState extends State<HomePage> {
         friendsList = [];
         isLoading = false;
       });
+    }
+  }
+
+  StreamSubscription<DatabaseEvent>? friendsStream;
+
+  void _addFriendsListener() {
+    final currentUser = Auth().currentUser?.uid;
+    if (currentUser == null) return;
+
+    DatabaseReference userFriendsRef = FirebaseDatabase.instance.ref('users/$currentUser/friends');
+    friendsStream = userFriendsRef.onValue.listen((event) async {
+      if (event.snapshot.exists) {
+        final friendsIds = (event.snapshot.value as Map<dynamic, dynamic>).keys;
+
+        DatabaseReference usersRef = FirebaseDatabase.instance.ref('users');
+        List<User> updatedFriendsList = [];
+        for (var friendId in friendsIds) {
+          final friendSnapshot = await usersRef.child(friendId).get();
+          if (friendSnapshot.exists) {
+            final friendData = friendSnapshot.value as Map<dynamic, dynamic>;
+            updatedFriendsList.add(User(
+              id: friendId,
+              name: friendData['name'] ?? 'No Name',
+              email: friendData['email'] ?? '',
+              profilePicture: friendData['profilePicture'] ?? '',
+              notificationPreferences: friendData['notificationPreferences'] ?? true,
+              events: User.parseEvents(friendData['events']),
+              friends: User.parseFriendIds(friendData['friends']),
+              pledgedGifts: User.parsePledgedGifts(friendData['pledgedGifts']),
+            ));
+          }
+        }
+
+        setState(() {
+          friendsList = updatedFriendsList;
+        });
+      } else {
+        setState(() {
+          friendsList = [];
+        });
+      }
+    });
+  }
+
+  void _deleteFriend(User friend, BuildContext context) async {
+    final currentUser = Auth().currentUser?.uid;
+    if (currentUser == null) return;
+
+    DatabaseReference userFriendsRef = FirebaseDatabase.instance.ref('users/$currentUser/friends/${friend.id}');
+    await userFriendsRef.remove();
+
+    DatabaseReference friendUserRef = FirebaseDatabase.instance.ref('users/${friend.id}/friends/$currentUser');
+    await friendUserRef.remove();
+
+    sendDeletedFriendNotification(friend.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${friend.name} removed from friends list!'),
+      ),
+    );
+
+    setState(() {});
+
+    print('${friend.name} removed from friends list!');
+  }
+
+  Future<void> sendDeletedFriendNotification(String friendID) async {
+    try {
+      bool isEnabled = await UserController.isNotificationEnabled(friendID);
+      if(!isEnabled){
+        return;
+      }
+      final friendToken = await User.getNotificationToken(friendID);
+      final userId = Auth().currentUser?.uid;
+      final userName = await User.getUserNameById(userId!);
+      if (friendToken != null) {
+        await NotificationService().sendNotification(
+          token: friendToken,
+          title: 'Your Friend Removed You!',
+          body: '$userName removed you from their friends list',
+        );
+      } else {
+        print('Friend\'s FCM token not found.');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
     }
   }
 
@@ -401,41 +519,90 @@ class _HomePageState extends State<HomePage> {
             itemCount: filteredFriendsList.length,
             itemBuilder: (context, index) {
               final friend = filteredFriendsList[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Card(
-                  color: appColors['listCard'],
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: friend.profilePicture != _defaultProfileImagePath
-                          ? FileImage(File(friend.profilePicture))
-                          : AssetImage(friend.profilePicture)
-                      as ImageProvider,
-                    ),
-                    title: Text(friend.name),
-                    subtitle: Text(friend.email),
-                    trailing: friend.events.isNotEmpty
-                        ? Text(
-                      "Upcoming Events: ${friend.events.length}",
-                      style: TextStyle(color: Colors.green, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
-                    )
-                        : Text(
-                      "No Upcoming Events",
-                      style: TextStyle(color: Colors.red, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              EventListPage(friendId: friend.id,),
-                        ),
+              return Dismissible(
+                key: Key(filteredFriendsList[index].id),
+                direction: DismissDirection.endToStart,
+                onDismissed: (direction) {
+                  _deleteFriend(friend, context);
+                },
+                confirmDismiss: (direction) async {
+                  final bool? confirm = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Confirm Deletion'),
+                        content: Text('Are you sure you want to delete this item?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel', style: TextStyle(color: appColors['primary']),),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('Delete'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: appColors['primary'],
+                              foregroundColor: appColors['buttonText'],
+                              shadowColor: Colors.blueGrey,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              padding:
+                              EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              textStyle: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     },
+                  );
+                  return confirm ?? false;
+                },
+                background: Container(
+                  color: appColors['primary'],
+                  alignment: Alignment.centerRight,
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Icon(Icons.delete, color: Colors.white),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Card(
+                    color: appColors['listCard'],
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: friend.profilePicture != _defaultProfileImagePath
+                            ? FileImage(File(friend.profilePicture))
+                            : AssetImage(friend.profilePicture)
+                        as ImageProvider,
+                      ),
+                      title: Text(friend.name),
+                      subtitle: Text(friend.email),
+                      trailing: friend.events.isNotEmpty
+                          ? Text(
+                        "Upcoming Events: ${friend.events.length}",
+                        style: TextStyle(color: Colors.green, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
+                      )
+                          : Text(
+                        "No Upcoming Events",
+                        style: TextStyle(color: Colors.red, fontSize: 14, fontFamily: 'lxgw', fontWeight: FontWeight.bold),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                EventListPage(friendId: friend.id,),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               );
@@ -444,5 +611,11 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    friendsStream?.cancel();
+    super.dispose();
   }
 }
