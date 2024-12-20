@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/services/notification_service.dart';
+import '../controllers/user_controller.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/services/auth.dart';
 import 'package:hedieaty/models/user.dart' as app_user;
@@ -43,9 +44,9 @@ class _SignUpPageState extends State<SignUpPage> {
           pledgedGifts: [],
         );
 
-        await app_user.User.publishToFirebase(newUser);
+        await UserController.publishToFirebase(newUser);
         final notificationToken = await NotificationService().getToken();
-        await app_user.User.updateUserNotificationToken(newUser.id, notificationToken);
+        await UserController.updateUserNotificationToken(newUser.id, notificationToken);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

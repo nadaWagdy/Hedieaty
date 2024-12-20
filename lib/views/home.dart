@@ -122,7 +122,7 @@ class _AppLayoutState extends State<AppLayout> {
 
   Future<void> _addFriendManually(String email) async {
     final userId = Auth().currentUser?.uid;
-    final newFriend = await User.getUserByEmail(email);
+    final newFriend = await UserController.getUserByEmail(email);
     if(newFriend != null){
       if (newFriend.id == userId) {
         scaffoldMessengerKey.currentState?.showSnackBar(
@@ -286,9 +286,9 @@ class _AppLayoutState extends State<AppLayout> {
       if(!isEnabled){
         return;
       }
-      final friendToken = await User.getNotificationToken(friendID);
+      final friendToken = await UserController.getNotificationToken(friendID);
       final userId = Auth().currentUser?.uid;
-      final userName = await User.getUserNameById(userId!);
+      final userName = await UserController.getUserNameById(userId!);
       if (friendToken != null) {
         await NotificationService().sendNotification(
           token: friendToken,
@@ -494,9 +494,9 @@ class _HomePageState extends State<HomePage> {
       if(!isEnabled){
         return;
       }
-      final friendToken = await User.getNotificationToken(friendID);
+      final friendToken = await UserController.getNotificationToken(friendID);
       final userId = Auth().currentUser?.uid;
-      final userName = await User.getUserNameById(userId!);
+      final userName = await UserController.getUserNameById(userId!);
       if (friendToken != null) {
         await NotificationService().sendNotification(
           token: friendToken,

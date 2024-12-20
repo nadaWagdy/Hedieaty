@@ -6,7 +6,6 @@ import '../models/enums.dart';
 import '../services/auth.dart';
 import '../services/notification_service.dart';
 import 'common_widgets.dart';
-import 'package:hedieaty/models/user.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
 
 class MyPledgedGiftsPage extends StatefulWidget {
@@ -32,13 +31,13 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
   void _loadAllPledgedGifts() async {
     try {
       final userId = Auth().currentUser?.uid;
-      List<Map<String, String>> pledgedGifts = await User.getAllPledgedGifts(userId!);
+      List<Map<String, String>> pledgedGifts = await UserController.getAllPledgedGifts(userId!);
 
       for (var gift in pledgedGifts) {
         print('Friend ID: ${gift['friendId']}, Event ID: ${gift['eventId']}, Gift ID: ${gift['giftId']}');
         final newgift = await Gift.getGiftById(gift['friendId']!, gift['eventId']!, gift['giftId']!);
         myPledgedGifts.add(newgift!);
-        String? friendName = await User.getUserNameById(gift['friendId']!);
+        String? friendName = await UserController.getUserNameById(gift['friendId']!);
         DateTime? eventDate = await event_model.Event.getEventDateById(gift['friendId']!, gift['eventId']!);
         friendNames.add(friendName!);
         eventsDates.add(eventDate!);
@@ -58,7 +57,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     print(myPledgedGifts[index].name);
     myPledgedGifts[index].status = GiftStatus.available;
     Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available, '');
-    User.removePledgedGift(userId!, myPledgedGifts[index].id);
+    UserController.removePledgedGift(userId!, myPledgedGifts[index].id);
     sendUnPledgedNotification(friendIds[index], myPledgedGifts[index].name);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
@@ -74,9 +73,9 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
       if(!isEnabled){
         return;
       }
-      final friendToken = await User.getNotificationToken(friendID);
+      final friendToken = await UserController.getNotificationToken(friendID);
       final userId = Auth().currentUser?.uid;
-      final userName = await User.getUserNameById(userId!);
+      final userName = await UserController.getUserNameById(userId!);
       if (friendToken != null) {
         await NotificationService().sendNotification(
           token: friendToken,
@@ -109,9 +108,9 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
       if(!isEnabled){
         return;
       }
-      final friendToken = await User.getNotificationToken(friendIds[index]);
+      final friendToken = await UserController.getNotificationToken(friendIds[index]);
       final userId = Auth().currentUser?.uid;
-      final userName = await User.getUserNameById(userId!);
+      final userName = await UserController.getUserNameById(userId!);
       if (friendToken != null) {
         await NotificationService().sendNotification(
           token: friendToken,

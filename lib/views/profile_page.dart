@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
+import '../controllers/user_controller.dart';
 import '../services/db_service.dart';
 import '../models/user.dart';
 import 'common_widgets.dart';
@@ -30,10 +31,10 @@ class _ProfilePageState extends State<ProfilePage> {
     final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
 
     try {
-      User? user = await User.fetchFromFirebase(userId!);
+      User? user = await UserController.fetchFromFirebase(userId!);
 
       if (user == null) {
-        final drafts = await User.getDrafts();
+        final drafts = await UserController.getDrafts();
         user = drafts.firstWhere((u) => u.id == userId);
       }
 
@@ -56,7 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _user?.profilePicture = pickedImage.path;
       });
       final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
-      await User.updateProfilePicture(userId!, pickedImage.path);
+      await UserController.updateProfilePicture(userId!, pickedImage.path);
       await _dbService.updateUser(_user!);
     }
   }
@@ -67,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
-    await User.updateUserName(userId!, newName);
+    await UserController.updateUserName(userId!, newName);
     await _dbService.updateUser(_user!);
   }
 
@@ -205,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
       _user!.notificationPreferences = value;
-      await User.updateNotificationPreferences(userId!, value);
+      await UserController.updateNotificationPreferences(userId!, value);
 
       await _dbService.updateUser(_user!);
     } catch (error) {

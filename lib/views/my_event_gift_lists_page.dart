@@ -6,9 +6,9 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
 import 'package:hedieaty/models/gift.dart';
-import 'package:hedieaty/models/user.dart' as user_model;
 import 'package:hedieaty/views/gift_details_page.dart';
 import 'package:image_picker/image_picker.dart';
+import '../controllers/user_controller.dart';
 import 'common_widgets.dart';
 
 class MyEventGiftsListPage extends StatefulWidget {
@@ -65,7 +65,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
       for (Gift gift in gifts) {
         if (gift.status != GiftStatus.available) {
           final Gift? pledged_gift = await Gift.getGiftById(userId, widget.eventId, gift.id);
-          String? name = await user_model.User.getUserNameById(pledged_gift!.pledgedBy!);
+          String? name = await UserController.getUserNameById(pledged_gift!.pledgedBy!);
           _pledgedby.add(name!);
         } else {
           _pledgedby.add('');

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'common_widgets.dart';
 import 'friend_gift_lists_page.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
+import 'package:hedieaty/controllers/user_controller.dart';
 import 'package:hedieaty/models/user.dart';
 
 class EventListPage extends StatefulWidget {
@@ -44,7 +45,7 @@ class _EventListPageState extends State<EventListPage> {
   Future<void> _fetchFriendData(String id) async {
 
     try {
-      User? user = await User.fetchFromFirebase(id);
+      User? user = await UserController.fetchFromFirebase(id);
 
       if (user != null) {
         setState(() {

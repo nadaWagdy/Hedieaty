@@ -5,7 +5,6 @@ import 'package:hedieaty/models/enums.dart';
 import 'package:hedieaty/services/notification_service.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 import 'package:hedieaty/models/gift.dart';
-import 'package:hedieaty/models/user.dart' as user_model;
 import 'package:hedieaty/views/gift_details_page.dart';
 import '../controllers/user_controller.dart';
 import '../services/auth.dart';
@@ -39,7 +38,7 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
       if (gifts[index].status != GiftStatus.pledged) {
         gifts[index].status = GiftStatus.pledged;
         Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged, userId!);
-        user_model.User.addPledgedGift(userId, widget.friendId, widget.eventId, gifts[index].id);
+        UserController.addPledgedGift(userId, widget.friendId, widget.eventId, gifts[index].id);
         sendPledgedNotification(index);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${gifts[index].name} pledged!')),
@@ -54,9 +53,9 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
       if(!isEnabled){
         return;
       }
-      final friendToken = await user_model.User.getNotificationToken(widget.friendId);
+      final friendToken = await UserController.getNotificationToken(widget.friendId);
       final userId = Auth().currentUser?.uid;
-      final userName = await user_model.User.getUserNameById(userId!);
+      final userName = await UserController.getUserNameById(userId!);
       if (friendToken != null) {
         await NotificationService().sendNotification(
           token: friendToken,
