@@ -65,101 +65,103 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
           : gift != null
           ? Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Card(
-          color: appColors['background'],
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Column(
-            children: [
-              if (gift!.imagePath != null)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FutureBuilder<Widget>(
-                    future: getImageWidget(gift!.imagePath),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                        return snapshot.data!;
-                      } else if (snapshot.hasError) {
-                        return Image.network('https://unsplash.com/photos/mobile-notification-badge-symbol-on-orange-background-safety-warning-sign-warning-on-dangers-of-smartphone-fraud-online-scam-alerts-data-security-3d-render-illustration-Rl9BcV5H04Q');
-                      } else {
-                        return CircularProgressIndicator(color: appColors['primary'],);
-                      }
-                    },
-                  ),
-                ),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    gift!.name,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: appColors['primary'],
-                        fontFamily: 'lxgw'
+        child: SingleChildScrollView(
+          child: Card(
+            color: appColors['background'],
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                if (gift!.imagePath != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: FutureBuilder<Widget>(
+                      future: getImageWidget(gift!.imagePath),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                          return snapshot.data!;
+                        } else if (snapshot.hasError) {
+                          return Image.network('https://unsplash.com/photos/mobile-notification-badge-symbol-on-orange-background-safety-warning-sign-warning-on-dangers-of-smartphone-fraud-online-scam-alerts-data-security-3d-render-illustration-Rl9BcV5H04Q');
+                        } else {
+                          return CircularProgressIndicator(color: appColors['primary'],);
+                        }
+                      },
                     ),
                   ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 20,),
-                    Text('Description: ',
+                ListTile(
+                  title: Center(
+                    child: Text(
+                      gift!.name,
                       style: TextStyle(
-                        color: appColors['primary'],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        fontFamily: 'lxgw'
-                      ),),
-                    Text(
-                      gift!.description ?? 'No description available',
-                      style: TextStyle(fontSize: 18, fontFamily: 'lxgw', color: appColors['buttonText']),
-                    ),
-                    SizedBox(height: 8),
-                    RichText(
-                      text: TextSpan(
-                          text: 'Category: ',
-                          style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                          children: <TextSpan>[
-                            TextSpan(
-                              text: '${gift!.category?.name ?? 'Unknown'}',
-                              style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontWeight: FontWeight.normal),
-                            )
-                          ]
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          color: appColors['primary'],
+                          fontFamily: 'lxgw'
                       ),
                     ),
-                    SizedBox(height: 10,),
-                    RichText(
-                      text: TextSpan(
-                          text: 'Price: ',
-                          style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                          children: <TextSpan>[
-                            TextSpan(
-                              text: '\$${gift!.price?.toStringAsFixed(2) ?? 'N/A'}',
-                              style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontWeight: FontWeight.normal),
-                            )
-                          ]
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 20,),
+                      Text('Description: ',
+                        style: TextStyle(
+                            color: appColors['primary'],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            fontFamily: 'lxgw'
+                        ),),
+                      Text(
+                        gift!.description ?? 'No description available',
+                        style: TextStyle(fontSize: 18, fontFamily: 'lxgw', color: appColors['buttonText']),
                       ),
-                    ),
-                    SizedBox(height: 10),
-                    RichText(
-                      text: TextSpan(
-                          text: 'Status: ',
-                          style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                          children: <TextSpan>[
-                            TextSpan(
-                              text: '${gift!.status.name}',
-                              style: TextStyle(fontSize: 20, color: getGiftStatusTextColor(gift!.status),),
-                            )
-                          ]
+                      SizedBox(height: 8),
+                      RichText(
+                        text: TextSpan(
+                            text: 'Category: ',
+                            style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: '${gift!.category?.name ?? 'Unknown'}',
+                                style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontWeight: FontWeight.normal),
+                              )
+                            ]
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 10,),
+                      RichText(
+                        text: TextSpan(
+                            text: 'Price: ',
+                            style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: '\$${gift!.price?.toStringAsFixed(2) ?? 'N/A'}',
+                                style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontWeight: FontWeight.normal),
+                              )
+                            ]
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      RichText(
+                        text: TextSpan(
+                            text: 'Status: ',
+                            style: TextStyle(fontSize: 22, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: '${gift!.status.name}',
+                                style: TextStyle(fontSize: 20, color: getGiftStatusTextColor(gift!.status),),
+                              )
+                            ]
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+        ),
         ),
       )
           : Center(child: Text('Gift not found.')),
