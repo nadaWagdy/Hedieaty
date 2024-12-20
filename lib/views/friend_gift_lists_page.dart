@@ -101,7 +101,7 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
     return Scaffold(
       appBar: createSubPageAppBar('${widget.friendName}\'s ${widget.eventName} Gifts'),
       body: isLoading ?
-      CircularProgressIndicator()
+      Center(child: CircularProgressIndicator(color: appColors['primary'],),)
       : Column(
         children: [
           SizedBox(height: 20,),
@@ -110,9 +110,6 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
               itemCount: gifts.length,
               itemBuilder: (context, index) {
                 final gift = gifts[index];
-                print('testtttt');
-                print(gift.imagePath != 'assets/images/default_profile.png');
-                print(gift.imagePath);
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                   child: Card(
@@ -164,15 +161,15 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
                           ),
                         ],
                       ),
-                      trailing: IconButton(
+                      trailing: gift.status == GiftStatus.available ? IconButton(
                         icon: Icon(
-                          gift.status != GiftStatus.available ? Icons.check_box : Icons.add_box_rounded,
+                          Icons.add_box_rounded,
                           color: appColors['primary'],
                         ),
                         onPressed: gift.status == GiftStatus.available
                             ? () => pledgeGift(index)
                             : null,
-                      ),
+                      ) : SizedBox(height: 0,),
                       tileColor: getGiftStatusColor(gift.status),
                       onTap: () {
                         Navigator.push(

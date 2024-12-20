@@ -28,7 +28,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
   List<Gift> savedGifts = [];
 
   final ImagePicker _picker = ImagePicker();
-  String _giftImagePath = 'assets/images/default.png';
+  String _giftImagePath = 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
   @override
   void initState() {
@@ -69,7 +69,6 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
   }
 
   Future<void> _addGift() async {
-
     if (!_formKey.currentState!.validate()) return;
 
     _selectedEventId = eventsIds[events.indexOf(selectedEvent!)];
@@ -113,7 +112,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
     _priceController.clear();
     selectedCategory = null;
     selectedEvent = null;
-    _giftImagePath = 'assets/images/default.png';
+    _giftImagePath = 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
   }
 
   Future<void> _saveGiftList() async {
@@ -219,7 +218,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
                   )
                 ),
                 SizedBox(height: 10,),
-                _giftImagePath == 'assets/images/default.png' ? SizedBox(height: 0,) : 
+                _giftImagePath == 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' ? SizedBox(height: 0,) :
                     Center(
                           child: Text('Gift Image Selected', style: TextStyle(color: appColors['primary'], fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'lxgw'),)
                     ),

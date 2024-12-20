@@ -290,6 +290,23 @@ class _CreateEventPageState extends State<CreateEventPage> {
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData(
+            colorScheme: ColorScheme.light(
+              primary: appColors['primary']!,
+              onPrimary: appColors['buttonText']!,
+              onSurface: appColors['background']!,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: appColors['primary']!,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {

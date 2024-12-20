@@ -33,20 +33,11 @@ class _EventListPageState extends State<EventListPage> {
       final fetchedEvents = await event_model.Event.fetchFromFirebase(id);
       setState(() {
         friendEvents = fetchedEvents;
-        isLoading = false;
       });
     } catch (error) {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error fetching events: $error',
-            style: TextStyle(fontSize: 18),
-          ),
-        ),
-      );
     }
   }
 
@@ -58,6 +49,7 @@ class _EventListPageState extends State<EventListPage> {
       if (user != null) {
         setState(() {
           _friend = user;
+          isLoading = false;
         });
       }
     } catch (error) {
@@ -69,11 +61,12 @@ class _EventListPageState extends State<EventListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: isLoading ? createSubPageAppBar(''): createSubPageAppBar('${_friend!.name}\'s Events'),
-      body: Padding(
+      body: isLoading ? Center(child: CircularProgressIndicator(color: appColors['primary'],)) :
+      Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            isLoading ? SizedBox(height: 20,) : Row(
+            Row(
               children: [
                 CircleAvatar(
                   radius: 50,
@@ -112,9 +105,7 @@ class _EventListPageState extends State<EventListPage> {
                   final event = friendEvents[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: isLoading ?
-                    Center(child: CircularProgressIndicator(color: appColors['primary'],))
-                        : Card(
+                    child: Card(
                       color: appColors['listCard'],
                       elevation: 4,
                       shape: RoundedRectangleBorder(
