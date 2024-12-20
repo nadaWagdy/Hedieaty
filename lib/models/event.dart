@@ -9,9 +9,9 @@ class Event {
   String name;
   DateTime date;
   String location;
-  final String description;
+  String description;
   EventStatus status;
-  final EventCategory category;
+  EventCategory category;
   final List<Gift> eventGifts;
 
   Event({
