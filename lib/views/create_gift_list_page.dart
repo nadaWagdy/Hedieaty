@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:hedieaty/controllers/gift_controller.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/enums.dart';
@@ -62,7 +63,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
   }
 
   Future<void> _loadSavedGifts() async {
-    final drafts = await Gift.getDrafts();
+    final drafts = await GiftController.getDrafts();
     setState(() {
       savedGifts = drafts;
     });
@@ -102,7 +103,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
       imagePath: _giftImagePath
     );
 
-    await Gift.saveDraft(gift);
+    await GiftController.saveDraft(gift);
     setState(() {
       savedGifts.add(gift);
     });
@@ -118,7 +119,7 @@ class _CreateGiftListPageState extends State<CreateGiftListPage> {
   Future<void> _saveGiftList() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     for (Gift gift in savedGifts) {
-      await Gift.publishToFirebase(gift, gift.eventID, userId!);
+      await GiftController.publishToFirebase(gift, gift.eventID, userId!);
     }
 
     final db = await DatabaseService().database;

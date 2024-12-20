@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 
+import '../controllers/gift_controller.dart';
+
 class GiftDetailsPage extends StatefulWidget {
   final String giftId;
   final String eventId;
@@ -34,7 +36,7 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
 
   Future<void> _loadGiftDetails() async {
     try {
-      gift = await Gift.getGiftById(widget.userId, widget.eventId, widget.giftId);
+      gift = await GiftController.getGiftById(widget.userId, widget.eventId, widget.giftId);
         setState(() {
           isLoading = false;
         });
@@ -49,7 +51,7 @@ class _GiftDetailsPageState extends State<GiftDetailsPage> {
     );
     giftStream = ref.onValue.listen((event) async {
       if (event.snapshot.exists) {
-        gift = await Gift.getGiftById(widget.userId, widget.eventId, widget.giftId);
+        gift = await GiftController.getGiftById(widget.userId, widget.eventId, widget.giftId);
         setState(() {
         });
       }

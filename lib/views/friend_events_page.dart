@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../controllers/event_controller.dart';
 import 'common_widgets.dart';
 import 'friend_gift_lists_page.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
@@ -31,7 +32,7 @@ class _EventListPageState extends State<EventListPage> {
 
   Future<void> fetchEvents(String id) async {
     try {
-      final fetchedEvents = await event_model.Event.fetchFromFirebase(id);
+      final fetchedEvents = await EventController.fetchFromFirebase(id);
       setState(() {
         friendEvents = fetchedEvents;
       });

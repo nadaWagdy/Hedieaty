@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/views/gift_details_page.dart';
+import '../controllers/event_controller.dart';
+import '../controllers/gift_controller.dart';
 import '../controllers/user_controller.dart';
 import '../models/enums.dart';
 import '../services/auth.dart';
 import '../services/notification_service.dart';
 import 'common_widgets.dart';
-import 'package:hedieaty/models/event.dart' as event_model;
 
 class MyPledgedGiftsPage extends StatefulWidget {
   @override
@@ -35,10 +36,10 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
 
       for (var gift in pledgedGifts) {
         print('Friend ID: ${gift['friendId']}, Event ID: ${gift['eventId']}, Gift ID: ${gift['giftId']}');
-        final newgift = await Gift.getGiftById(gift['friendId']!, gift['eventId']!, gift['giftId']!);
+        final newgift = await GiftController.getGiftById(gift['friendId']!, gift['eventId']!, gift['giftId']!);
         myPledgedGifts.add(newgift!);
         String? friendName = await UserController.getUserNameById(gift['friendId']!);
-        DateTime? eventDate = await event_model.Event.getEventDateById(gift['friendId']!, gift['eventId']!);
+        DateTime? eventDate = await EventController.getEventDateById(gift['friendId']!, gift['eventId']!);
         friendNames.add(friendName!);
         eventsDates.add(eventDate!);
         friendIds.add(gift['friendId']!);
@@ -56,7 +57,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     final userId = Auth().currentUser?.uid;
     print(myPledgedGifts[index].name);
     myPledgedGifts[index].status = GiftStatus.available;
-    Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available, '');
+    GiftController.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.available, '');
     UserController.removePledgedGift(userId!, myPledgedGifts[index].id);
     sendUnPledgedNotification(friendIds[index], myPledgedGifts[index].name);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +95,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
     final userId = Auth().currentUser?.uid;
     setState(() {
       myPledgedGifts[index].status = GiftStatus.purchased;
-      Gift.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased, userId!);
+      GiftController.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased, userId!);
       sendPurchasedNotification(index);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),

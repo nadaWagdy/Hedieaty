@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hedieaty/controllers/event_controller.dart';
 import '../models/event.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/event.dart' as app_event;
@@ -33,7 +34,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
   }
 
   Future<void> _loadSavedEvents() async {
-    final drafts = await Event.getDrafts();
+    final drafts = await EventController.getDrafts();
     setState(() {
       savedEvents = drafts;
     });
@@ -67,7 +68,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
     );
 
     try {
-      await app_event.Event.saveDraft(newEvent);
+      await EventController.saveDraft(newEvent);
       _resetForm();
       setState(() {
         savedEvents.add(newEvent);
@@ -82,7 +83,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
   void _saveEventsList() async {
     final userId = Auth().currentUser?.uid;
     for (Event event in savedEvents) {
-      await Event.publishToFirebase(event, userId!);
+      await EventController.publishToFirebase(event, userId!);
     }
 
     final db = await DatabaseService().database;

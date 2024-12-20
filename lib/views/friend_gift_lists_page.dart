@@ -6,6 +6,7 @@ import 'package:hedieaty/services/notification_service.dart';
 import 'package:hedieaty/views/common_widgets.dart';
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/views/gift_details_page.dart';
+import '../controllers/gift_controller.dart';
 import '../controllers/user_controller.dart';
 import '../services/auth.dart';
 
@@ -37,7 +38,7 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
     setState(() {
       if (gifts[index].status != GiftStatus.pledged) {
         gifts[index].status = GiftStatus.pledged;
-        Gift.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged, userId!);
+        GiftController.updateStatus(widget.friendId, widget.eventId, gifts[index].id, GiftStatus.pledged, userId!);
         UserController.addPledgedGift(userId, widget.friendId, widget.eventId, gifts[index].id);
         sendPledgedNotification(index);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +73,7 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
 
   Future<void> _loadGifts() async {
     try {
-      gifts = await Gift.fetchFromFirebase(widget.eventId, widget.friendId);
+      gifts = await GiftController.fetchFromFirebase(widget.eventId, widget.friendId);
       setState(() {
         isLoading = false;
       });

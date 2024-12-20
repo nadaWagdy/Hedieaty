@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hedieaty/views/my_event_gift_lists_page.dart';
+import '../controllers/event_controller.dart';
+import '../controllers/gift_controller.dart';
 import '../models/enums.dart';
 import 'common_widgets.dart';
 import 'package:hedieaty/models/event.dart' as event_model;
-import 'package:hedieaty/models/gift.dart';
 import 'create_event_page.dart';
 
 class MyEventsPage extends StatefulWidget {
@@ -28,7 +29,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
   Future<void> fetchEvents() async {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
-      final fetchedEvents = await event_model.Event.fetchFromFirebase(userId!);
+      final fetchedEvents = await EventController.fetchFromFirebase(userId!);
       setState(() {
         events = fetchedEvents;
         isLoading = false;
@@ -50,7 +51,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
   Future<bool> checkIfPledgedOrPurchased(String eventId) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    final eventGifts = await Gift.fetchFromFirebase(eventId, userId!);
+    final eventGifts = await GiftController.fetchFromFirebase(eventId, userId!);
 
     return eventGifts.any((gift) => gift.status == GiftStatus.pledged || gift.status == GiftStatus.purchased);
   }
@@ -186,7 +187,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
               );
               final userId = FirebaseAuth.instance.currentUser?.uid;
 
-              await event.updateInFirebase(userId!);
+              await EventController.updateInFirebase(userId!, event);
 
               setState(() {
                 int index = events.indexWhere((e) => e.id == event.id);
@@ -294,7 +295,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
 
     if (confirmation == true) {
-      await event_model.Event.deleteFromFirebase(userId!, event.id);
+      await EventController.deleteFromFirebase(userId!, event.id);
 
       setState(() {
         events.removeWhere((e) => e.id == event.id);

@@ -8,6 +8,7 @@ import 'package:hedieaty/models/event.dart' as event_model;
 import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/views/gift_details_page.dart';
 import 'package:image_picker/image_picker.dart';
+import '../controllers/gift_controller.dart';
 import '../controllers/user_controller.dart';
 import 'common_widgets.dart';
 
@@ -61,10 +62,10 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
   Future<void> _loadGifts() async {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
-      gifts = await Gift.fetchFromFirebase(widget.eventId, userId!);
+      gifts = await GiftController.fetchFromFirebase(widget.eventId, userId!);
       for (Gift gift in gifts) {
         if (gift.status != GiftStatus.available) {
-          final Gift? pledged_gift = await Gift.getGiftById(userId, widget.eventId, gift.id);
+          final Gift? pledged_gift = await GiftController.getGiftById(userId, widget.eventId, gift.id);
           String? name = await UserController.getUserNameById(pledged_gift!.pledgedBy!);
           _pledgedby.add(name!);
         } else {
@@ -215,7 +216,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
               gift.imagePath = _giftImagePath;
 
               final userId = FirebaseAuth.instance.currentUser?.uid;
-              await gift.updateInFirebase(userId!, widget.eventId);
+              await GiftController.updateInFirebase(userId!, widget.eventId, gift);
 
               setState(() {
                 int index = gifts.indexWhere((g) => g.id == gift.id);
@@ -262,7 +263,7 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
       return;
     }
     final userId = FirebaseAuth.instance.currentUser?.uid;
-    Gift.deleteFromFirebase(userId!, widget.eventId, gift.id);
+    GiftController.deleteFromFirebase(userId!, widget.eventId, gift.id);
     setState(() {
       gifts.removeWhere((e) => e.id == gift.id);
     });
