@@ -189,7 +189,7 @@ class _AppLayoutState extends State<AppLayout> {
               onPressed: () {
                 Navigator.pop(context, controller.text);
               },
-              child: Text('Save', style: TextStyle(fontSize: 18),),
+              child: Text('Add', style: TextStyle(fontSize: 18),),
               style: ElevatedButton.styleFrom(
                 backgroundColor: appColors['primary'],
                 foregroundColor: appColors['buttonText'],
