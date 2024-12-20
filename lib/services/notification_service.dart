@@ -90,7 +90,7 @@ Future<void> sendNotification({
 }) async {
   final url = Uri.parse('https://fcm.googleapis.com/v1/projects/hedieaty-534ec/messages:send');
   final serverToken = await GetServerKey().getServerKeyToken();
-  print('server token $serverToken');
+  // print('server token $serverToken');
   final headers = {
     'Accept': 'application/json',
     'Authorization': 'Bearer $serverToken',
