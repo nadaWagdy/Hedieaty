@@ -291,27 +291,27 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
                 ),
               ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 6),
             Text(
               'Date:',
               style: TextStyle(fontSize: 20, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
             ),
-            SizedBox(height: 10,),
+            SizedBox(height: 6,),
             Text(
               '${event!.date.toLocal().toString().split(' ')[0]}',
-              style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontFamily: 'lxgw'),
+              style: TextStyle(fontSize: 18, color: appColors['buttonText'], fontFamily: 'lxgw'),
             ),
-            SizedBox(height: 20,),
+            SizedBox(height: 6,),
             Text(
               'Location:',
               style: TextStyle(fontSize: 20, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
             ),
-            SizedBox(height: 10,),
+            SizedBox(height: 6,),
             Text(
               '${event!.location}',
-              style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontFamily: 'lxgw'),
+              style: TextStyle(fontSize: 18, color: appColors['buttonText'], fontFamily: 'lxgw'),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 6),
             Text(
               'Event Description:',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: appColors['primary'], fontFamily: 'lxgw'),
@@ -319,14 +319,14 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
             SizedBox(height: 8),
             Text(
               event!.description,
-              style: TextStyle(fontSize: 20, color: appColors['buttonText'], fontFamily: 'lxgw'),
+              style: TextStyle(fontSize: 16, color: appColors['buttonText'], fontFamily: 'lxgw'),
             ),
             SizedBox(height: 20),
 
             gifts.length == 0 ? SizedBox(height: 0,) : Text(
               "Gifts for ${event!.name}",
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: appColors['primary'],
                 fontFamily: 'lxgw'
@@ -335,12 +335,12 @@ class _MyEventGiftsListPageState extends State<MyEventGiftsListPage> {
             SizedBox(height: 20),
             gifts.length == 0 ?
             Center(
-              child: Text('No Gifts For This Event Yet. Add Some Gifts Frist',
+              child: Text('No Gifts For This Event Yet. Add Some Gifts!',
                 style: TextStyle(
-                    color: appColors['buttonText'],
+                    color: appColors['primary'],
                     fontFamily: 'lxgw',
                     fontWeight: FontWeight.bold,
-                    fontSize: 30
+                    fontSize: 28,
                 ),
                 textAlign: TextAlign.center,
               ),

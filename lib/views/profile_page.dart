@@ -132,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: appColors['primary'],
                 fontFamily: 'lxgw',
                 fontWeight: FontWeight.bold,
-                fontSize: 26),
+                fontSize: 20),
           ),
           content: TextField(
             controller: controller,
@@ -293,7 +293,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(
                   "Created Events",
                   style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: appColors['buttonText']
                   ),

@@ -73,7 +73,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
     final TextEditingController nameController = TextEditingController(text: event.name);
     final TextEditingController locationController = TextEditingController(text: event.location);
+    final TextEditingController descriptionController = TextEditingController(text: event.description);
     DateTime selectedDate = event.date;
+    String? selectedCategory = event.category.name;
 
     showDialog(
       context: context,
@@ -91,22 +93,60 @@ class _MyEventsPageState extends State<MyEventsPage> {
               style: TextStyle(color: Colors.black),
               cursorColor: appColors['primary'],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 5,),
+            TextField(
+              controller: descriptionController,
+              decoration: textFieldsDecoration('Event Description'),
+              style: TextStyle(color: Colors.black),
+              cursorColor: appColors['primary'],
+            ),
+            SizedBox(height: 5),
             TextField(
               controller: locationController,
               decoration: textFieldsDecoration('Location'),
               style: TextStyle(color: Colors.black),
               cursorColor: appColors['primary'],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 5,),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              items: EventCategory.values.map((category) {
+                return DropdownMenuItem<String>(
+                  value: category.name,
+                  child: Text(category.name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                selectedCategory = value;
+              },
+              decoration: textFieldsDecoration('Category'),
+            ),
+            SizedBox(height: 5),
             Center(
               child: TextButton(
                 onPressed: () async {
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
-                    initialDate: selectedDate,
+                    initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
                     lastDate: DateTime(2100),
+                    builder: (BuildContext context, Widget? child) {
+                      return Theme(
+                        data: ThemeData(
+                          colorScheme: ColorScheme.light(
+                            primary: appColors['primary']!,
+                            onPrimary: appColors['buttonText']!,
+                            onSurface: appColors['background']!,
+                          ),
+                          textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                              foregroundColor: appColors['primary']!,
+                            ),
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
                   if (pickedDate != null) {
                     setState(() {
@@ -131,6 +171,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
             onPressed: () async {
               event.name = nameController.text;
               event.location = locationController.text;
+              event.description = descriptionController.text;
               event.date = selectedDate;
               if (selectedDate.year == DateTime.now().year &&
                   selectedDate.month == DateTime.now().month &&
@@ -139,6 +180,10 @@ class _MyEventsPageState extends State<MyEventsPage> {
               else
                 event.status = EventStatus.upcoming;
 
+              event.category = EventCategory.values.firstWhere(
+                    (category) => category.name == selectedCategory,
+                orElse: () => event.category,
+              );
               final userId = FirebaseAuth.instance.currentUser?.uid;
 
               await event.updateInFirebase(userId!);

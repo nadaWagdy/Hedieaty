@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hedieaty/models/gift.dart';
+import 'package:hedieaty/views/gift_details_page.dart';
 import '../controllers/user_controller.dart';
 import '../models/enums.dart';
 import '../services/auth.dart';
@@ -139,7 +140,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(height: 20,),
-          Expanded(
+          myPledgedGifts.isNotEmpty ? Expanded(
             child: ListView.builder(
               itemCount: myPledgedGifts.length,
               itemBuilder: (context, index) {
@@ -155,6 +156,14 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GiftDetailsPage(giftId: gift.id, eventId: eventIds[index], userId: friendIds[index]),
+                          ),
+                        );
+                      },
                       tileColor: gift.status == GiftStatus.purchased ? Colors.amberAccent : null,
                       title: Text(
                         gift.name,
@@ -167,7 +176,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Pledged to: $friendName',
+                          Text('${gift.status == GiftStatus.pledged ? 'Pledged' : 'Purchased'} to: $friendName',
                             style: TextStyle(
                               fontSize: 18,
                             ),
@@ -204,6 +213,8 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
                 );
               },
             ),
+          ) : Center(
+            child: Text('You Have Not Pledged Any Gifts Yet', style: TextStyle(color: appColors['primary'], fontWeight: FontWeight.bold, fontSize: 20),),
           ),
         ],
       ),
