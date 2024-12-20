@@ -37,7 +37,7 @@ class _SignUpPageState extends State<SignUpPage> {
           name: _nameController.text,
           email: _emailController.text,
           notificationPreferences: false,
-          profilePicture: 'assets/images/default.png',
+          profilePicture: 'https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg',
           events: [],
           friends: [],
           pledgedGifts: [],
@@ -199,6 +199,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         createUserWithEmailAndPassword();
+                        Navigator.pop(context);
                       }
                     },
                     child: Text(
