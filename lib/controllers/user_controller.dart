@@ -1,7 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/user.dart';
-import '../services/database_service.dart';
+import '../services/db_service.dart';
 
 class UserController {
 
