@@ -51,6 +51,9 @@ void main() {
       await tester.tap(find.byIcon(Icons.person_add));
       await tester.pumpAndSettle();
 
+      await Future.delayed(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+
       // making sure the add friend dialog displayed to the user
       expect(find.text('Add Friend'), findsOneWidget);
 
