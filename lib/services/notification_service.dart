@@ -25,8 +25,7 @@ class NotificationService
 
   void handleMessage(RemoteMessage? message) {
     if (message == null) return;
-    // navigate to the screen for the notification
-    // to be implemented
+
   }
 
   Future initLocalNotifications() async {
@@ -72,7 +71,6 @@ class NotificationService
   {
     await _firebaseMessaging.requestPermission();
     final FCMToken = await _firebaseMessaging.getToken();
-    // should be saved in db with user
     print('fcm token = $FCMToken');
     initPushNotification();
     initLocalNotifications();
