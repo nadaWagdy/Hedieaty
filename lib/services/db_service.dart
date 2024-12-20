@@ -58,7 +58,7 @@ class DatabaseService {
       category INTEGER,
       price REAL,
       status INTEGER,
-      event_id TEXT
+      event_id TEXT,
       imagePath TEXT
     )
     ''');
