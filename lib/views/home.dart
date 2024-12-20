@@ -13,6 +13,8 @@ import 'my_events_page.dart';
 import 'profile_page.dart';
 import 'package:hedieaty/services/auth.dart';
 
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class HedieatyApp extends StatelessWidget{
 
   const HedieatyApp({super.key});
@@ -20,6 +22,7 @@ class HedieatyApp extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       title: 'Hedieaty',
       home: WidgetTree(),
       theme: ThemeData(
@@ -80,7 +83,7 @@ class _AppLayoutState extends State<AppLayout> {
                   trailing: IconButton(
                     icon: Icon(Icons.person_add),
                     onPressed: () {
-                      _addFriend(user, build_context);
+                      _addFriend(user);
                       Navigator.of(context).pop();
                     },
                   ),
@@ -95,9 +98,9 @@ class _AppLayoutState extends State<AppLayout> {
                 Navigator.pop(context);
                 String? friendEmail = await _showAddFriendManuallyDialog(build_context);
                 if (friendEmail != null && friendEmail.isNotEmpty) {
-                  _addFriendManually(friendEmail, context, build_context);
+                  _addFriendManually(friendEmail);
                 } else {
-                  ScaffoldMessenger.of(build_context).showSnackBar(
+                  scaffoldMessengerKey.currentState?.showSnackBar(
                     SnackBar(
                       content: Text('Email Field Was Empty'),
                     ),
@@ -117,21 +120,21 @@ class _AppLayoutState extends State<AppLayout> {
     );
   }
 
-  Future<void> _addFriendManually(String email, BuildContext context, BuildContext friendContext) async {
+  Future<void> _addFriendManually(String email) async {
     final userId = Auth().currentUser?.uid;
     final newFriend = await User.getUserByEmail(email);
     if(newFriend != null){
       if (newFriend.id == userId) {
-        ScaffoldMessenger.of(friendContext).showSnackBar(
+        scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text('This is your email'),
           ),
         );
         return;
       }
-      _addFriend(newFriend, context);
+      _addFriend(newFriend);
     } else {
-      ScaffoldMessenger.of(friendContext).showSnackBar(
+      scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
           content: Text('No User With This Email Was Found. Try Another Email'),
         ),
@@ -215,32 +218,44 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   Future<List<User>> _fetchAllUsers() async {
+    final currentUserId = Auth().currentUser?.uid;
     DatabaseReference usersRef = FirebaseDatabase.instance.ref('users');
     final snapshot = await usersRef.get();
 
     if (snapshot.exists) {
       final data = snapshot.value as Map<dynamic, dynamic>;
-      return data.entries.map((entry) {
-        final userId = entry.key;
-        final userData = entry.value;
-        return User(
-          id: userId,
-          name: userData['name'] ?? 'No Name',
-          email: userData['email'] ?? '',
-          profilePicture: userData['profilePicture'] ?? '',
-          notificationPreferences: userData['notificationPreferences'] ?? true,
-          events: User.parseEvents(userData['events']),
-          friends: User.parseFriendIds(userData['friends']),
-          pledgedGifts: User.parsePledgedGifts(userData['pledgedGifts']),
-        );
-      }).toList();
-    } else {
-      return [];
+      final currentUserSnapshot = await usersRef.child(currentUserId!).get();
+
+      if (currentUserSnapshot.exists) {
+        final currentUserData = currentUserSnapshot.value as Map<dynamic, dynamic>;
+        final currentFriends = User.parseFriendIds(currentUserData['friends']);
+
+        return data.entries
+            .where((entry) => entry.key != currentUserId && !currentFriends.contains(entry.key))
+            .map((entry) {
+          final userId = entry.key;
+          final userData = entry.value;
+          return User(
+            id: userId,
+            name: userData['name'] ?? 'No Name',
+            email: userData['email'] ?? '',
+            profilePicture: userData['profilePicture'] ?? '',
+            notificationPreferences: userData['notificationPreferences'] ?? true,
+            events: User.parseEvents(userData['events']),
+            friends: User.parseFriendIds(userData['friends']),
+            pledgedGifts: User.parsePledgedGifts(userData['pledgedGifts']),
+          );
+        })
+            .toList();
+      }
     }
+
+    return [];
   }
 
 
-  void _addFriend(User friend, BuildContext context) async {
+
+  void _addFriend(User friend) async {
     final currentUser = Auth().currentUser?.uid;
     if (currentUser == null) return;
 
@@ -255,7 +270,7 @@ class _AppLayoutState extends State<AppLayout> {
     });
 
     sendAddedFriendNotification(friend.id);
-    ScaffoldMessenger.of(context).showSnackBar(
+    scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text('${friend.name} added as a friend!'),
       ),
@@ -451,7 +466,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _deleteFriend(User friend, BuildContext context) async {
+  void _deleteFriend(User friend) async {
     final currentUser = Auth().currentUser?.uid;
     if (currentUser == null) return;
 
@@ -462,7 +477,7 @@ class _HomePageState extends State<HomePage> {
     await friendUserRef.remove();
 
     sendDeletedFriendNotification(friend.id);
-    ScaffoldMessenger.of(context).showSnackBar(
+    scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
         content: Text('${friend.name} removed from friends list!'),
       ),
@@ -634,7 +649,7 @@ class _HomePageState extends State<HomePage> {
                 key: Key(filteredFriendsList[index].id),
                 direction: DismissDirection.endToStart,
                 onDismissed: (direction) {
-                  _deleteFriend(friend, context);
+                  _deleteFriend(friend);
                 },
                 confirmDismiss: (direction) async {
                   final bool? confirm = await showDialog(
