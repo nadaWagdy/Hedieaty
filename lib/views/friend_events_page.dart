@@ -18,8 +18,11 @@ class EventListPage extends StatefulWidget {
 
 class _EventListPageState extends State<EventListPage> {
   List<event_model.Event> friendEvents = [];
+  List<event_model.Event> filteredEvents = [];
   bool isLoading = true;
   User? _friend;
+  DateTimeRange? selectedDateRange;
+  String? selectedCategory;
 
   static const IconData giftIcon = IconData(0xf689, fontFamily: 'lxgw', );
 
@@ -35,6 +38,7 @@ class _EventListPageState extends State<EventListPage> {
       final fetchedEvents = await EventController.fetchFromFirebase(id);
       setState(() {
         friendEvents = fetchedEvents;
+        filteredEvents = fetchedEvents;
       });
     } catch (error) {
       setState(() {
@@ -44,7 +48,6 @@ class _EventListPageState extends State<EventListPage> {
   }
 
   Future<void> _fetchFriendData(String id) async {
-
     try {
       User? user = await UserController.fetchFromFirebase(id);
 
@@ -59,12 +62,24 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
+  void _filterEvents() {
+    setState(() {
+      filteredEvents = friendEvents.where((event) {
+        final matchesCategory = selectedCategory == null || event.category.name == selectedCategory;
+        final matchesDateRange = selectedDateRange == null ||
+            (event.date.isAfter(selectedDateRange!.start) && event.date.isBefore(selectedDateRange!.end));
+        return matchesCategory && matchesDateRange;
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: isLoading ? createSubPageAppBar(''): createSubPageAppBar('${_friend!.name}\'s Events'),
-      body: isLoading ? Center(child: CircularProgressIndicator(color: appColors['primary'],)) :
-      Padding(
+      appBar: isLoading ? createSubPageAppBar('') : createSubPageAppBar('${_friend!.name}\'s Events'),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator(color: appColors['primary']))
+          : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -99,12 +114,82 @@ class _EventListPageState extends State<EventListPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20,),
+            SizedBox(height: 50),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    hint: Text("Filter by Category", style: TextStyle(
+                      color: appColors['primary'],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),),
+                    style: TextStyle(
+                      color: appColors['primary'],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                    decoration: TextFieldDecoration.searchInputDecoration('Filter by Category'),
+                    value: selectedCategory,
+                    items: friendEvents
+                        .map((e) => e.category.name)
+                        .toSet()
+                        .map((category) => DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCategory = value;
+                        _filterEvents();
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(width: 8),
+                IconButton(
+                    color: appColors['primary'],
+                    onPressed: () async {
+                      final range = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                        builder: (BuildContext context, Widget? child) {
+                          return Theme(
+                            data: ThemeData(
+                              colorScheme: ColorScheme.light(
+                                primary: appColors['primary']!,
+                                onPrimary: appColors['buttonText']!,
+                                onSurface: appColors['background']!,
+                              ),
+                              textButtonTheme: TextButtonThemeData(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: appColors['primary']!,
+                                ),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (range != null) {
+                        setState(() {
+                          selectedDateRange = range;
+                          _filterEvents();
+                        });
+                      }
+                    },
+                    icon: Icon(Icons.calendar_month, color: appColors['primary'], size: 40,)),
+              ],
+            ),
+            SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
-                itemCount: friendEvents.length,
+                itemCount: filteredEvents.length,
                 itemBuilder: (context, index) {
-                  final event = friendEvents[index];
+                  final event = filteredEvents[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                     child: Card(
@@ -114,11 +199,12 @@ class _EventListPageState extends State<EventListPage> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: ListTile(
-                        title: Text(event.name,
+                        title: Text(
+                          event.name,
                           style: TextStyle(
-                              color: appColors['primary'],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                            color: appColors['primary'],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
                           ),
                         ),
                         subtitle: Column(
@@ -126,68 +212,109 @@ class _EventListPageState extends State<EventListPage> {
                           children: [
                             RichText(
                               text: TextSpan(
-                                  text: 'Category: ',
-                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: '${event.category.name}',
-                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
-                                    )
-                                  ]
+                                text: 'Category: ',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: appColors['primary'],
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'lxgw',
+                                ),
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: '${event.category.name}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: appColors['background'],
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                             RichText(
                               text: TextSpan(
-                                  text: 'Status: ',
-                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: '${event.status.name}',
-                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
-                                    )
-                                  ]
+                                text: 'Status: ',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: appColors['primary'],
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'lxgw',
+                                ),
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: '${event.status.name}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: appColors['background'],
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                             RichText(
                               text: TextSpan(
-                                  text: 'Date: ',
-                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: '${event.date.toLocal().toString().split(' ')[0]}',
-                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
-                                    )
-                                  ]
+                                text: 'Date: ',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: appColors['primary'],
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'lxgw',
+                                ),
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: '${event.date.toLocal().toString().split(' ')[0]}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: appColors['background'],
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                             RichText(
                               text: TextSpan(
-                                  text: 'Location: ',
-                                  style: TextStyle(fontSize: 18, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: '${event.location}',
-                                      style: TextStyle(fontSize: 18, color: appColors['background'], fontWeight: FontWeight.normal),
-                                    )
-                                  ]
+                                text: 'Location: ',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: appColors['primary'],
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'lxgw',
+                                ),
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: '${event.location}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: appColors['background'],
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(CupertinoIcons.gift_fill,
+                          icon: Icon(
+                            CupertinoIcons.gift_fill,
                             color: appColors['primary'],
                             size: 40,
                           ),
-                          onPressed: () {
-
-                          },
+                          onPressed: () {},
                         ),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => FriendsGiftListPage(friendId: _friend!.id, eventId: event.id, friendName: _friend!.name, eventName: event.name,),
+                              builder: (context) => FriendsGiftListPage(
+                                friendId: _friend!.id,
+                                eventId: event.id,
+                                friendName: _friend!.name,
+                                eventName: event.name,
+                                friendEvent: event,
+                              ),
                             ),
                           );
                         },

@@ -146,6 +146,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   decoration: TextFieldDecoration.searchInputDecoration('Event Description'),
                   maxLines: 3,
                 ),
+                SizedBox(height: 16,),
                 TextFormField(
                   controller: _eventLocationController,
                   style: TextStyle(

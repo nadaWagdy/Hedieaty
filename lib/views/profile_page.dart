@@ -298,6 +298,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       fontWeight: FontWeight.bold,
                       color: appColors['buttonText']
                   ),
+
                 ),
                 ElevatedButton(
                   onPressed: () {

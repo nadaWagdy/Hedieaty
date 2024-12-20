@@ -98,7 +98,7 @@ class _MyPledgedGiftsPageState extends State<MyPledgedGiftsPage> {
       GiftController.updateStatus(friendIds[index], eventIds[index], myPledgedGifts[index].id, GiftStatus.purchased, userId!);
       sendPurchasedNotification(index);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${myPledgedGifts[index].name} unpledged!')),
+        SnackBar(content: Text('${myPledgedGifts[index].name} marked as purchased!')),
       );
     });
   }

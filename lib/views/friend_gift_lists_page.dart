@@ -8,6 +8,7 @@ import 'package:hedieaty/models/gift.dart';
 import 'package:hedieaty/views/gift_details_page.dart';
 import '../controllers/gift_controller.dart';
 import '../controllers/user_controller.dart';
+import '../models/event.dart';
 import '../services/auth.dart';
 
 class FriendsGiftListPage extends StatefulWidget {
@@ -15,8 +16,9 @@ class FriendsGiftListPage extends StatefulWidget {
   final String eventName;
   final String eventId;
   final String friendId;
+  final Event friendEvent;
 
-  const FriendsGiftListPage({Key? key, required this.friendName, required this.eventName, required this.eventId, required this.friendId}) : super(key: key);
+  const FriendsGiftListPage({Key? key, required this.friendName, required this.eventName, required this.eventId, required this.friendId, required this.friendEvent}) : super(key: key);
 
   @override
   _FriendsGiftListPageState createState() => _FriendsGiftListPageState();
@@ -102,91 +104,141 @@ class _FriendsGiftListPageState extends State<FriendsGiftListPage> {
       appBar: createSubPageAppBar('${widget.friendName}\'s ${widget.eventName} Gifts'),
       body: isLoading ?
       Center(child: CircularProgressIndicator(color: appColors['primary'],),)
-      : Column(
-        children: [
-          SizedBox(height: 20,),
-          Expanded(
-            child: ListView.builder(
-              itemCount: gifts.length,
-              itemBuilder: (context, index) {
-                final gift = gifts[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Card(
-                    color: appColors['listCard'],
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:getImageProvider(gift.imagePath),
-                      ),
-                      title: Text(
-                        gift.name,
-                        style: TextStyle(
-                          color: appColors['primary'],
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                      subtitle:Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            gifts[index].description ?? 'No description available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontFamily: 'lxgw',
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Category: ${gifts[index].category?.name ?? "Unknown"}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                color: appColors['secondary'],
-                                fontWeight: FontWeight.bold
-                            ),
-                          ),
-                          Text(
-                            'Status: ${gifts[index].status.name}',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontFamily: 'lxgw',
-                                color: appColors['secondary'],
-                                fontWeight: FontWeight.bold
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: gift.status == GiftStatus.available ? IconButton(
-                        icon: Icon(
-                          Icons.add_box_rounded,
-                          color: appColors['primary'],
-                        ),
-                        onPressed: gift.status == GiftStatus.available
-                            ? () => pledgeGift(index)
-                            : null,
-                      ) : SizedBox(height: 0,),
-                      tileColor: getGiftStatusColor(gift.status),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                GiftDetailsPage(giftId: gift.id, eventId: widget.eventId, userId: widget.friendId),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
+      : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                widget.friendEvent.name,
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: appColors['primary'],
+                    fontFamily: 'lxgw'
+                ),
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 6),
+            Text(
+              'Date:',
+              style: TextStyle(fontSize: 20, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 6,),
+            Text(
+              '${widget.friendEvent.date.toLocal().toString().split(' ')[0]}',
+              style: TextStyle(fontSize: 18, color: appColors['buttonText'], fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 6,),
+            Text(
+              'Location:',
+              style: TextStyle(fontSize: 20, color: appColors['primary'], fontWeight: FontWeight.bold, fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 6,),
+            Text(
+              '${widget.friendEvent.location}',
+              style: TextStyle(fontSize: 18, color: appColors['buttonText'], fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Event Description:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: appColors['primary'], fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 8),
+            Text(
+              widget.friendEvent.description,
+              style: TextStyle(fontSize: 16, color: appColors['buttonText'], fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Gifts:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: appColors['primary'], fontFamily: 'lxgw'),
+            ),
+            SizedBox(height: 6),
+            Expanded(
+              child: ListView.builder(
+                itemCount: gifts.length,
+                itemBuilder: (context, index) {
+                  final gift = gifts[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Card(
+                      color: appColors['listCard'],
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage:getImageProvider(gift.imagePath),
+                        ),
+                        title: Text(
+                          gift.name,
+                          style: TextStyle(
+                            color: appColors['primary'],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        subtitle:Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              gifts[index].description ?? 'No description available',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontFamily: 'lxgw',
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Category: ${gifts[index].category?.name ?? "Unknown"}',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'lxgw',
+                                  color: appColors['secondary'],
+                                  fontWeight: FontWeight.bold
+                              ),
+                            ),
+                            Text(
+                              'Status: ${gifts[index].status.name}',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontFamily: 'lxgw',
+                                  color: appColors['secondary'],
+                                  fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: gift.status == GiftStatus.available ? IconButton(
+                          icon: Icon(
+                            Icons.add_box_rounded,
+                            color: appColors['primary'],
+                          ),
+                          onPressed: gift.status == GiftStatus.available
+                              ? () => pledgeGift(index)
+                              : null,
+                        ) : SizedBox(height: 0,),
+                        tileColor: getGiftStatusColor(gift.status),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  GiftDetailsPage(giftId: gift.id, eventId: widget.eventId, userId: widget.friendId),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
